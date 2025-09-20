@@ -426,10 +426,11 @@ function TextEditor() {
         extensions: [
             __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$tiptap$2f$starter$2d$kit$2f$dist$2f$index$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"]
         ],
-        content: '',
+        content: '<h1>Title</h1>',
         editorProps: {
             attributes: {
-                class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-4 dark:prose-invert'
+                class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-4 dark:prose-invert',
+                'data-placeholder': 'Title'
             }
         },
         immediatelyRender: false
@@ -458,7 +459,7 @@ function TextEditor() {
                                     children: "📄"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TextEditor.tsx",
-                                    lineNumber: 36,
+                                    lineNumber: 37,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -466,21 +467,21 @@ function TextEditor() {
                                     children: currentFile
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TextEditor.tsx",
-                                    lineNumber: 37,
+                                    lineNumber: 38,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                     className: "text-xs text-gray-500 dark:text-gray-400",
-                                    children: "• Modified"
+                                    children: "• Saved"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/TextEditor.tsx",
-                                    lineNumber: 38,
+                                    lineNumber: 39,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/TextEditor.tsx",
-                            lineNumber: 35,
+                            lineNumber: 36,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -491,23 +492,23 @@ function TextEditor() {
                                 children: "Save"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/TextEditor.tsx",
-                                lineNumber: 41,
+                                lineNumber: 42,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/TextEditor.tsx",
-                            lineNumber: 40,
+                            lineNumber: 41,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/TextEditor.tsx",
-                    lineNumber: 34,
+                    lineNumber: 35,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/TextEditor.tsx",
-                lineNumber: 33,
+                lineNumber: 34,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -517,18 +518,18 @@ function TextEditor() {
                     className: "h-full"
                 }, void 0, false, {
                     fileName: "[project]/src/components/TextEditor.tsx",
-                    lineNumber: 53,
+                    lineNumber: 54,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/TextEditor.tsx",
-                lineNumber: 52,
+                lineNumber: 53,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/TextEditor.tsx",
-        lineNumber: 31,
+        lineNumber: 32,
         columnNumber: 5
     }, this);
 }
@@ -546,14 +547,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 ;
 ;
 function AIAssistant() {
-    const [messages, setMessages] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([
-        {
-            id: '1',
-            type: 'assistant',
-            content: 'Hello! I\'m your AI learning assistant. I can help you understand concepts, answer questions about your notes, and provide insights. What would you like to learn about today?',
-            timestamp: new Date()
-        }
-    ]);
+    const [messages, setMessages] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])([]);
     const [inputText, setInputText] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])('');
     const [isThinking, setIsThinking] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     // Mock thinking steps for demonstration
@@ -625,19 +619,19 @@ function AIAssistant() {
                             children: "🤖"
                         }, void 0, false, {
                             fileName: "[project]/src/components/AIAssistant.tsx",
-                            lineNumber: 78,
+                            lineNumber: 71,
                             columnNumber: 11
                         }, this),
-                        "AI Assistant"
+                        "AI Tutor"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/AIAssistant.tsx",
-                    lineNumber: 77,
+                    lineNumber: 70,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/AIAssistant.tsx",
-                lineNumber: 76,
+                lineNumber: 69,
                 columnNumber: 7
             }, this),
             isThinking && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -648,7 +642,7 @@ function AIAssistant() {
                         children: "Thinking..."
                     }, void 0, false, {
                         fileName: "[project]/src/components/AIAssistant.tsx",
-                        lineNumber: 86,
+                        lineNumber: 79,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -665,17 +659,17 @@ function AIAssistant() {
                                                 children: "✓"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/AIAssistant.tsx",
-                                                lineNumber: 97,
+                                                lineNumber: 90,
                                                 columnNumber: 23
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/AIAssistant.tsx",
-                                            lineNumber: 96,
+                                            lineNumber: 89,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/AIAssistant.tsx",
-                                        lineNumber: 90,
+                                        lineNumber: 83,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -686,7 +680,7 @@ function AIAssistant() {
                                                 children: step.title
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/AIAssistant.tsx",
-                                                lineNumber: 102,
+                                                lineNumber: 95,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -694,30 +688,30 @@ function AIAssistant() {
                                                 children: step.content
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/AIAssistant.tsx",
-                                                lineNumber: 105,
+                                                lineNumber: 98,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/AIAssistant.tsx",
-                                        lineNumber: 101,
+                                        lineNumber: 94,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, step.id, true, {
                                 fileName: "[project]/src/components/AIAssistant.tsx",
-                                lineNumber: 89,
+                                lineNumber: 82,
                                 columnNumber: 15
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/components/AIAssistant.tsx",
-                        lineNumber: 87,
+                        lineNumber: 80,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/AIAssistant.tsx",
-                lineNumber: 85,
+                lineNumber: 78,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -732,7 +726,7 @@ function AIAssistant() {
                                     children: message.content
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/AIAssistant.tsx",
-                                    lineNumber: 129,
+                                    lineNumber: 122,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -743,23 +737,23 @@ function AIAssistant() {
                                     })
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/AIAssistant.tsx",
-                                    lineNumber: 132,
+                                    lineNumber: 125,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/AIAssistant.tsx",
-                            lineNumber: 122,
+                            lineNumber: 115,
                             columnNumber: 13
                         }, this)
                     }, message.id, false, {
                         fileName: "[project]/src/components/AIAssistant.tsx",
-                        lineNumber: 118,
+                        lineNumber: 111,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/AIAssistant.tsx",
-                lineNumber: 116,
+                lineNumber: 109,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -771,12 +765,12 @@ function AIAssistant() {
                             value: inputText,
                             onChange: (e)=>setInputText(e.target.value),
                             onKeyUp: handleKeyUp,
-                            placeholder: "Ask me anything about your notes...",
+                            placeholder: "What do you want to learn about?",
                             className: "flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200",
                             rows: 2
                         }, void 0, false, {
                             fileName: "[project]/src/components/AIAssistant.tsx",
-                            lineNumber: 149,
+                            lineNumber: 142,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -788,29 +782,29 @@ function AIAssistant() {
                                 children: "Send"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/AIAssistant.tsx",
-                                lineNumber: 162,
+                                lineNumber: 155,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/AIAssistant.tsx",
-                            lineNumber: 157,
+                            lineNumber: 150,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/AIAssistant.tsx",
-                    lineNumber: 148,
+                    lineNumber: 141,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/AIAssistant.tsx",
-                lineNumber: 147,
+                lineNumber: 140,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/AIAssistant.tsx",
-        lineNumber: 74,
+        lineNumber: 67,
         columnNumber: 5
     }, this);
 }

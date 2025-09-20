@@ -17,14 +17,7 @@ interface ThinkingStep {
 }
 
 export default function AIAssistant() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'assistant',
-      content: 'Hello! I\'m your AI learning assistant. I can help you understand concepts, answer questions about your notes, and provide insights. What would you like to learn about today?',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -76,7 +69,7 @@ export default function AIAssistant() {
       <div className="p-3 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <h2 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center">
           <span className="mr-2">🤖</span>
-          AI Assistant
+          AI Tutor
         </h2>
       </div>
 
@@ -150,7 +143,7 @@ export default function AIAssistant() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyUp={handleKeyUp}
-            placeholder="Ask me anything about your notes..."
+            placeholder="What do you want to learn about?"
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
             rows={2}
           />

@@ -9,10 +9,11 @@ export default function TextEditor() {
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: '',
+    content: '<h1>Title</h1>',
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-4 dark:prose-invert',
+        'data-placeholder': 'Title',
       },
     },
     immediatelyRender: false,
@@ -35,7 +36,7 @@ export default function TextEditor() {
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">📄</span>
             <span className="font-medium text-gray-800 dark:text-gray-200">{currentFile}</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">• Modified</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">• Saved</span>
           </div>
           <div className="flex items-center space-x-2">
             <button
