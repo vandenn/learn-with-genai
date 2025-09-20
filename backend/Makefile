@@ -10,6 +10,3 @@ lint:
 
 run:
 	uv run -m src.main
-
-streamlit:
-	uv run -m streamlit run src/streamlit_ui.py
