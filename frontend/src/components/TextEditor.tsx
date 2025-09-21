@@ -28,7 +28,7 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
     content: activeFile ? marked(activeFile.content) : '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-4 dark:prose-invert',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-8 dark:prose-invert',
         'data-placeholder': 'Start writing...',
       },
     },
