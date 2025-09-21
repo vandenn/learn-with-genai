@@ -1,42 +1,55 @@
-import random
-import time
+from typing import Union
+
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 
 from src.models import AITutorResponse
+from src.settings import settings
 
-CANNED_RESPONSES = [
-    "That's a great question! Let me help you understand this concept better. Think of it as building blocks - each piece connects to create the bigger picture.",
-    "I can see you're exploring this topic! Here's a helpful way to think about it: Start with the fundamentals and gradually build up your understanding.",
-    "Excellent curiosity! This reminds me of a key principle in learning: breaking complex ideas into smaller, manageable parts always makes things clearer.",
-    "I love that you're asking this! Let's approach it step by step. The best way to understand this is to connect it to what you already know.",
-    "This is a common question that shows you're thinking deeply! Consider how this concept relates to other topics you've been studying.",
-    "Great insight! You're on the right track. Here's another perspective that might help clarify things for you.",
-    "That's exactly the kind of question that leads to deeper learning! Let's explore this together by examining the underlying patterns.",
-    "I can tell you're really engaging with the material! The key to mastering this concept is understanding its practical applications.",
-    "Perfect question! This concept becomes much clearer when you see how it works in real-world examples.",
-    "You're asking all the right questions! The beauty of this topic is how it connects to so many other areas of knowledge.",
-]
+SYSTEM_PROMPT = """You are an encouraging and knowledgeable AI tutor. Your role is to help users learn and understand concepts through:
 
-ENCOURAGEMENTS = [
-    "Keep up the excellent work!",
-    "You're making great progress!",
-    "Your curiosity is your greatest learning tool!",
-    "Remember, every expert was once a beginner!",
-    "You're developing strong critical thinking skills!",
-]
+1. Breaking down complex ideas into simpler, manageable parts
+2. Connecting new concepts to what the user might already know
+3. Providing clear explanations with practical examples
+4. Asking thoughtful follow-up questions to deepen understanding
+5. Always being encouraging and supportive
+
+Keep responses conversational, helpful, and concise (2-3 paragraphs max). Always end with an encouraging note that motivates continued learning."""
 
 
 def generate_response(user_message: str) -> AITutorResponse:
     try:
-        response = random.choice(CANNED_RESPONSES)
-        encouragement = random.choice(ENCOURAGEMENTS)
+        llm = get_llm()
 
-        full_response = f"{response}\n\n{encouragement}"
+        messages = [
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=user_message),
+        ]
 
-        time.sleep(2)
-
-        return AITutorResponse(response=full_response, success=True)
-    except Exception:
+        response = llm.invoke(messages)
+        return AITutorResponse(response=response.content, success=True)
+    except Exception as e:
+        print(f"Error generating AI response: {e}")
         return AITutorResponse(
             response="I'm having trouble processing your question right now. Please try again!",
             success=False,
         )
+
+
+def get_llm() -> Union[ChatOpenAI, ChatAnthropic]:
+    if settings.anthropic_api_key:
+        return ChatAnthropic(
+            model="claude-3-5-haiku-20241022",
+            api_key=settings.anthropic_api_key,
+            temperature=0.7,
+        )
+    elif settings.openai_api_key:
+        return ChatOpenAI(
+            model="gpt-4o-mini",
+            api_key=settings.openai_api_key,
+            temperature=0.7,
+        )
+    raise ValueError(
+        "No API key provided. Please set at least one LLM provider's API key in your environment."
+    )
