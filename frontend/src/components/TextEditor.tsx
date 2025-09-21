@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
 
+const AUTO_SAVE_INTERVAL_MS = 3000;
+
 interface ActiveFile {
   name: string;
   path: string;
@@ -19,6 +21,7 @@ interface TextEditorProps {
 
 export default function TextEditor({ activeFile }: TextEditorProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -45,10 +48,14 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
     }
   }, [activeFile, editor]);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (isAutoSave = false) => {
     if (!editor || !activeFile) return;
 
     try {
+      if (isAutoSave) {
+        setIsAutoSaving(true);
+      }
+
       const htmlContent = editor.getHTML();
 
       // Convert HTML back to markdown before saving
@@ -70,13 +77,32 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
         setHasUnsavedChanges(false);
       } else {
         const errorText = await response.text();
-        alert(`Failed to save file: ${errorText}`);
+        if (!isAutoSave) {
+          alert(`Failed to save file: ${errorText}`);
+        }
       }
     } catch (err) {
       console.error('Error saving file:', err);
-      alert('Failed to save file');
+      if (!isAutoSave) {
+        alert('Failed to save file');
+      }
+    } finally {
+      if (isAutoSave) {
+        setIsAutoSaving(false);
+      }
     }
   }, [editor, activeFile]);
+
+  // Auto-save timer
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges && !isAutoSaving) {
+        handleSave(true);
+      }
+    }, AUTO_SAVE_INTERVAL_MS);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [hasUnsavedChanges, isAutoSaving, handleSave]);
 
   // Add keyboard shortcut for saving
   useEffect(() => {
@@ -102,12 +128,12 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
               {activeFile ? `${activeFile.name}.md` : 'No file selected'}
             </span>
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              • {hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
+              • {isAutoSaving ? 'Auto-saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleSave}
+              onClick={() => handleSave()}
               disabled={!activeFile || !hasUnsavedChanges}
               className={`px-3 py-1 text-xs rounded ${
                 activeFile && hasUnsavedChanges
