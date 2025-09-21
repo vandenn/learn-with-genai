@@ -38,6 +38,10 @@ class SetBaseFolderRequest(BaseModel):
     path: str
 
 
+class AITutorChatRequest(BaseModel):
+    message: str
+
+
 # ================================
 # RESPONSE SCHEMAS
 # ================================
@@ -77,6 +81,11 @@ class BaseFolderConfigResponse(BaseModel):
 
 
 class SuccessResponse(BaseModel):
+    success: bool
+
+
+class AITutorChatResponse(BaseModel):
+    response: str
     success: bool
 
 

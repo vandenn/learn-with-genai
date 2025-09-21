@@ -27,3 +27,8 @@ class FileContent(BaseModel):
     content: str
     modified: datetime
     size: int
+
+
+class AITutorResponse(BaseModel):
+    response: str
+    success: bool
