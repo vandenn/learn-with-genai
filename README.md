@@ -9,10 +9,6 @@
 
 </div>
 
-# 📄 Overview
-
-- (overview here)
-
 # 🛠 Setup
 
 ## Frontend
