@@ -5,10 +5,18 @@ import Sidebar from './Sidebar';
 import TextEditor from './TextEditor';
 import AIAssistant from './AIAssistant';
 
+interface ActiveFile {
+  name: string;
+  path: string;
+  content: string;
+  projectId: string;
+}
+
 export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aiPanelWidth, setAiPanelWidth] = useState(30); // percentage
   const [isResizing, setIsResizing] = useState(false);
+  const [activeFile, setActiveFile] = useState<ActiveFile | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -35,6 +43,10 @@ export default function MainLayout() {
     setIsResizing(false);
   }, []);
 
+  const handleFileLoad = useCallback((fileData: ActiveFile) => {
+    setActiveFile(fileData);
+  }, []);
+
   // Add event listeners for mouse events
   useEffect(() => {
     if (isResizing) {
@@ -59,6 +71,7 @@ export default function MainLayout() {
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onFileLoad={handleFileLoad}
         />
       </div>
 
@@ -69,7 +82,7 @@ export default function MainLayout() {
           className="border-r border-gray-300 dark:border-gray-700"
           style={{ width: `${100 - aiPanelWidth}%` }}
         >
-          <TextEditor />
+          <TextEditor activeFile={activeFile} />
         </div>
 
         {/* Resize Handle */}

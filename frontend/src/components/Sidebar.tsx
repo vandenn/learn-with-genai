@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from 'react';
 
+interface ActiveFile {
+  name: string;
+  path: string;
+  content: string;
+  projectId: string;
+}
+
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onFileLoad: (fileData: ActiveFile) => void;
 }
 
 interface Project {
@@ -26,7 +34,7 @@ interface Config {
 
 const API_BASE = 'http://localhost:8000/api/v1';
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProps) {
   const [config, setConfig] = useState<Config | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -115,6 +123,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             if (activeFileData.file_path) {
               currentActiveFile = activeFileData.file_path;
               setActiveFile(activeFileData.file_path);
+
+              // Load the active file content into the editor
+              const filePathParts = activeFileData.file_path.split('/');
+              const fileName = filePathParts[filePathParts.length - 1].replace('.md', '');
+              await handleFileSelect(projectId, fileName);
             }
           }
         } catch (err) {
@@ -188,9 +201,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           console.warn('Error updating active file in backend:', configErr);
         }
 
-        // Here you would typically update the main text editor
-        console.log('Opened file:', fileContent);
-        // TODO: Pass file content to TextEditor component
+        // Pass file data to the parent component
+        onFileLoad({
+          name: fileContent.name,
+          path: fileContent.path,
+          content: fileContent.content,
+          projectId: projectId
+        });
       }
     } catch (err) {
       console.error('Error opening file:', err);
@@ -242,8 +259,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       });
 
       if (response.ok) {
-        const newFile = await response.json();
-
         // Reload project contents to show the new file
         await loadProjectContents(selectedProject);
 
