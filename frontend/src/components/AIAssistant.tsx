@@ -40,6 +40,23 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText 
     // Build context-enhanced message
     let enhancedMessage = inputText;
 
+    // Add previous conversation context
+    if (messages.length >= 2) {
+      // Find the last user message and all assistant responses after it
+      const lastUserMessageIndex = messages.findLastIndex(msg => msg.type === 'user');
+      if (lastUserMessageIndex >= 0 && lastUserMessageIndex < messages.length - 1) {
+        const lastUserMessage = messages[lastUserMessageIndex];
+        const assistantResponses = messages.slice(lastUserMessageIndex + 1).filter(msg => msg.type === 'assistant');
+
+        if (assistantResponses.length > 0) {
+          enhancedMessage += `\n\n--- PREVIOUS CONVERSATION ---\nUser: ${lastUserMessage.content}\n`;
+          assistantResponses.forEach((response, index) => {
+            enhancedMessage += `Assistant: ${response.content}\n`;
+          });
+        }
+      }
+    }
+
     if (activeFile) {
       enhancedMessage += `\n\n--- ACTIVE FILE CONTEXT ---\nFile: ${activeFile.name}\nContent:\n${activeFile.content}`;
 
