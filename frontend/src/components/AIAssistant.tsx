@@ -9,25 +9,12 @@ interface Message {
   timestamp: Date;
 }
 
-interface ThinkingStep {
-  id: string;
-  title: string;
-  content: string;
-  completed: boolean;
-}
 
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Mock thinking steps for demonstration
-  const [thinkingSteps] = useState<ThinkingStep[]>([
-    { id: '1', title: 'Analyzing your question', content: 'Understanding the context and requirements...', completed: true },
-    { id: '2', title: 'Searching knowledge base', content: 'Looking through relevant information sources...', completed: true },
-    { id: '3', title: 'Formulating response', content: 'Crafting a comprehensive and helpful answer...', completed: false },
-  ]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -101,38 +88,6 @@ export default function AIAssistant() {
         </h2>
       </div>
 
-      {/* Chain of Thought Section */}
-      {isThinking && (
-        <div className="p-3 border-b border-gray-300 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Thinking...</h3>
-          <div className="space-y-2">
-            {thinkingSteps.map((step) => (
-              <div key={step.id} className="flex items-start space-x-2">
-                <div className={`w-4 h-4 rounded-full mt-0.5 flex-shrink-0 ${
-                  step.completed
-                    ? 'bg-green-500'
-                    : 'bg-yellow-500 animate-pulse'
-                }`}>
-                  {step.completed && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs font-medium text-blue-800 dark:text-blue-200">
-                    {step.title}
-                  </div>
-                  <div className="text-xs text-blue-600 dark:text-blue-300">
-                    {step.content}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {messages.map((message) => (
@@ -167,23 +122,38 @@ export default function AIAssistant() {
       </div>
 
       {/* Input Area */}
-      <div className="p-3 border-t border-gray-300 dark:border-gray-700">
-        <div className="flex space-x-2">
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyUp={handleKeyUp}
-            placeholder="What do you want to learn about?"
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-            rows={2}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputText.trim() || isThinking}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            <span className="text-sm">Send</span>
-          </button>
+      <div className="border-t border-gray-300 dark:border-gray-700">
+        {/* Thinking Status Bar */}
+        {isThinking && (
+          <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-300 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-blue-600 dark:text-blue-300">Thinking...</span>
+            </div>
+          </div>
+        )}
+
+        <div className="p-3">
+          <div className="flex space-x-2">
+            <textarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyUp={handleKeyUp}
+              placeholder="What do you want to learn about?"
+              disabled={isThinking}
+              className={`flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${
+                isThinking ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              rows={2}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputText.trim() || isThinking}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              <span className="text-sm">Send</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
