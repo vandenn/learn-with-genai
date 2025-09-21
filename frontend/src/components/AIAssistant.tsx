@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Message {
   id: string;
@@ -18,9 +18,9 @@ interface ThinkingStep {
 
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
-
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Mock thinking steps for demonstration
   const [thinkingSteps] = useState<ThinkingStep[]>([
@@ -28,6 +28,11 @@ export default function AIAssistant() {
     { id: '2', title: 'Searching knowledge base', content: 'Looking through relevant information sources...', completed: true },
     { id: '3', title: 'Formulating response', content: 'Crafting a comprehensive and helpful answer...', completed: false },
   ]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isThinking]);
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -157,6 +162,8 @@ export default function AIAssistant() {
             </div>
           </div>
         ))}
+        {/* Invisible div to scroll to */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
