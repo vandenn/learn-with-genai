@@ -10,7 +10,11 @@ interface Message {
 }
 
 
-export default function AIAssistant() {
+interface AIAssistantProps {
+  activeProjectId?: string;
+}
+
+export default function AIAssistant({ activeProjectId }: AIAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -22,7 +26,7 @@ export default function AIAssistant() {
   }, [messages, isThinking]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !activeProjectId) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -42,18 +46,60 @@ export default function AIAssistant() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: currentInput }),
+        body: JSON.stringify({
+          message: currentInput,
+          project_id: activeProjectId
+        }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: data.response,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiResponse]);
+      if (response.ok && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Accumulate chunks in buffer
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process complete messages
+          while (buffer.includes('\n\n')) {
+            const messageEndIndex = buffer.indexOf('\n\n');
+            const messageChunk = buffer.slice(0, messageEndIndex);
+            buffer = buffer.slice(messageEndIndex + 2);
+
+            // Process each line in the message chunk
+            const lines = messageChunk.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+
+                  const aiMessage: Message = {
+                    id: `${Date.now()}-${Math.random()}`,
+                    type: 'assistant',
+                    content: data.content,
+                    timestamp: new Date(),
+                  };
+
+                  setMessages(prev => [...prev, aiMessage]);
+
+                  // If this is the final message, stop thinking
+                  if (data.type === 'final') {
+                    setIsThinking(false);
+                  }
+
+                  // Add a small delay to show messages one by one
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (parseError) {
+                  console.error('Error parsing stream data:', parseError);
+                }
+              }
+            }
+          }
+        }
       } else {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -66,7 +112,6 @@ export default function AIAssistant() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiResponse]);
-    } finally {
       setIsThinking(false);
     }
   };
@@ -139,16 +184,16 @@ export default function AIAssistant() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyUp={handleKeyUp}
-              placeholder="What do you want to learn about?"
-              disabled={isThinking}
+              placeholder={activeProjectId ? "What do you want to learn about?" : "Select a project to start chatting"}
+              disabled={isThinking || !activeProjectId}
               className={`flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${
-                isThinking ? 'opacity-50 cursor-not-allowed' : ''
+                (isThinking || !activeProjectId) ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               rows={2}
             />
             <button
               onClick={handleSendMessage}
-              disabled={!inputText.trim() || isThinking}
+              disabled={!inputText.trim() || isThinking || !activeProjectId}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <span className="text-sm">Send</span>

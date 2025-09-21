@@ -1,0 +1,7 @@
+Based on the user's project files, here's the relevant content:
+
+{file_contents}
+
+User question: {user_message}
+
+Please provide a helpful response that references the specific files and content found. Be encouraging and educational.

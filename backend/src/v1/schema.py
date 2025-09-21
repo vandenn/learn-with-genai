@@ -40,6 +40,7 @@ class SetBaseFolderRequest(BaseModel):
 
 class AITutorChatRequest(BaseModel):
     message: str
+    project_id: str
 
 
 # ================================
@@ -84,9 +85,10 @@ class SuccessResponse(BaseModel):
     success: bool
 
 
-class AITutorChatResponse(BaseModel):
-    response: str
-    success: bool
+class AITutorStreamMessage(BaseModel):
+    type: str  # "step", "final"
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 # ================================

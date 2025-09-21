@@ -1,15 +1,34 @@
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
-from src.logic import ai_tutor
-from src.v1.schema import AITutorChatRequest, AITutorChatResponse
+from src.logic.ai_tutor import stream_ai_tutor_workflow
+from src.v1.schema import AITutorChatRequest, AITutorStreamMessage
 
 router = APIRouter(prefix="/ai-tutor", tags=["ai-tutor"])
 
 
-@router.post("/chat", response_model=AITutorChatResponse)
+@router.post("/chat")
 async def chat(request: AITutorChatRequest):
-    tutor_response = ai_tutor.generate_response(request.message)
+    async def generate_stream():
+        try:
+            for result in stream_ai_tutor_workflow(request.message, request.project_id):
+                stream_msg = AITutorStreamMessage(
+                    type=result["type"], content=result["content"]
+                )
+                yield f"data: {stream_msg.model_dump_json()}\n\n"
+        except Exception:
+            error_msg = AITutorStreamMessage(
+                type="final",
+                content="I'm having trouble processing your question right now. Please try again!",
+            )
+            yield f"data: {error_msg.model_dump_json()}\n\n"
 
-    return AITutorChatResponse(
-        response=tutor_response.response, success=tutor_response.success
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/plain",
+        },
     )

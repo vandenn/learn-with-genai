@@ -102,7 +102,7 @@ export default function MainLayout() {
         <div
           style={{ width: `${aiPanelWidth}%`, minWidth: '250px' }}
         >
-          <AIAssistant />
+          <AIAssistant activeProjectId={activeFile?.projectId} />
         </div>
       </div>
     </div>
