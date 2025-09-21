@@ -1,5 +1,6 @@
 'use client';
 
+import { Selection } from '@tiptap/extensions';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useState, useEffect, useCallback } from 'react';
@@ -25,7 +26,7 @@ export default function TextEditor({ activeFile, onTextSelection }: TextEditorPr
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [Selection, StarterKit],
     content: activeFile ? marked(activeFile.content) : '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>',
     editorProps: {
       attributes: {
