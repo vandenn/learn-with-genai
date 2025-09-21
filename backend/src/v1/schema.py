@@ -86,7 +86,7 @@ class SuccessResponse(BaseModel):
 
 
 class AITutorStreamMessage(BaseModel):
-    type: str  # "step", "final"
+    type: str  # "step", "final", "note"
     content: str
     timestamp: datetime = Field(default_factory=datetime.now)
 

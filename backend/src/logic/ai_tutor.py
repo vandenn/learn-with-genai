@@ -13,11 +13,12 @@ from src.settings import settings
 class WorkflowState(TypedDict):
     user_message: str
     current_project_id: str | None
-    needs_search: bool
+    query_type: str  # "SEARCH", "ADD_TO_NOTE", "GENERAL"
     search_query: str
     found_files: List[Dict[str, Any]]
     file_contents: str
     final_response: str
+    note_content: str
     step_messages: List[str]
 
 
@@ -27,11 +28,12 @@ def stream_ai_tutor_workflow(user_message: str, current_project_id: str):
     initial_state = WorkflowState(
         user_message=user_message,
         current_project_id=current_project_id,
-        needs_search=False,
+        query_type="",
         search_query="",
         found_files=[],
         file_contents="",
         final_response="",
+        note_content="",
         step_messages=[],
     )
 
@@ -46,6 +48,8 @@ def stream_ai_tutor_workflow(user_message: str, current_project_id: str):
                 previous_step_count = current_step_count
             if state["final_response"]:
                 yield {"type": "final", "content": state["final_response"]}
+            if state["note_content"]:
+                yield {"type": "note", "content": state["note_content"]}
 
 
 def create_workflow() -> StateGraph:
@@ -54,17 +58,23 @@ def create_workflow() -> StateGraph:
     workflow.add_node("analyze_query", analyze_query)
     workflow.add_node("search_files", search_files)
     workflow.add_node("generate_response", generate_response)
+    workflow.add_node("generate_note", generate_note)
 
     workflow.set_entry_point("analyze_query")
 
     workflow.add_conditional_edges(
         "analyze_query",
         route_next_step,
-        {"search_files": "search_files", "generate_response": "generate_response"},
+        {
+            "search_files": "search_files",
+            "generate_response": "generate_response",
+            "generate_note": "generate_note",
+        },
     )
 
     workflow.add_edge("search_files", "generate_response")
     workflow.add_edge("generate_response", END)
+    workflow.add_edge("generate_note", END)
 
     return workflow.compile()
 
@@ -86,9 +96,9 @@ def analyze_query(state: WorkflowState) -> WorkflowState:
 
     response = llm.invoke(messages).content.strip()
 
-    if response.startswith("YES"):
-        state["needs_search"] = True
-        parts = response.split("YES", 1)
+    if response.startswith("SEARCH"):
+        state["query_type"] = "SEARCH"
+        parts = response.split("SEARCH", 1)
         if len(parts) > 1:
             state["search_query"] = parts[1].strip()
         else:
@@ -96,15 +106,18 @@ def analyze_query(state: WorkflowState) -> WorkflowState:
         state["step_messages"].append(
             "I need to search through your project files to answer that question."
         )
+    elif response.startswith("ADD_TO_NOTE"):
+        state["query_type"] = "ADD_TO_NOTE"
+        state["step_messages"].append("I'll add the previous discussion to your note.")
     else:
-        state["needs_search"] = False
+        state["query_type"] = "GENERAL"
         state["step_messages"].append("I'll answer this based on my knowledge.")
 
     return state
 
 
 def search_files(state: WorkflowState) -> WorkflowState:
-    if not state["needs_search"]:
+    if state["query_type"] != "SEARCH":
         return state
 
     state["step_messages"].append(f"Searching for: {state['search_query']}")
@@ -195,8 +208,34 @@ def generate_response(state: WorkflowState) -> WorkflowState:
     return state
 
 
+def generate_note(state: WorkflowState) -> WorkflowState:
+    llm = get_llm(is_mini=False)
+
+    conversation_content = ""
+    if "--- PREVIOUS CONVERSATION ---" in state["user_message"]:
+        parts = state["user_message"].split("--- PREVIOUS CONVERSATION ---")
+        if len(parts) > 1:
+            conversation_content = (
+                parts[1].split("--- ACTIVE FILE CONTEXT ---")[0].strip()
+            )
+
+    note_template = load_prompt("note_generation_user")
+    note_prompt = note_template.format(conversation_content=conversation_content)
+
+    note_system = load_prompt("note_generation_system")
+
+    messages = [SystemMessage(content=note_system), HumanMessage(content=note_prompt)]
+
+    response = llm.invoke(messages).content
+    state["note_content"] = response
+
+    return state
+
+
 def route_next_step(state: WorkflowState) -> str:
-    if state["needs_search"]:
+    if state["query_type"] == "ADD_TO_NOTE":
+        return "generate_note"
+    elif state["query_type"] == "SEARCH":
         return "search_files"
     else:
         return "generate_response"

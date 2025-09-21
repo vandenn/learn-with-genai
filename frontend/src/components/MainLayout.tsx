@@ -18,6 +18,7 @@ export default function MainLayout() {
   const [isResizing, setIsResizing] = useState(false);
   const [activeFile, setActiveFile] = useState<ActiveFile | null>(null);
   const [selectedText, setSelectedText] = useState<string>('');
+  const [appendToEditor, setAppendToEditor] = useState<((content: string) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -50,6 +51,10 @@ export default function MainLayout() {
 
   const handleTextSelection = useCallback((text: string) => {
     setSelectedText(text);
+  }, []);
+
+  const handleSetAppendFunction = useCallback((appendFn: (content: string) => void) => {
+    setAppendToEditor(() => appendFn);
   }, []);
 
   // Add event listeners for mouse events
@@ -87,7 +92,11 @@ export default function MainLayout() {
           className="border-r border-gray-300 dark:border-gray-700"
           style={{ width: `${100 - aiPanelWidth}%` }}
         >
-          <TextEditor activeFile={activeFile} onTextSelection={handleTextSelection} />
+          <TextEditor
+            activeFile={activeFile}
+            onTextSelection={handleTextSelection}
+            onSetAppendFunction={handleSetAppendFunction}
+          />
         </div>
 
         {/* Resize Handle */}
@@ -111,6 +120,7 @@ export default function MainLayout() {
             activeProjectId={activeFile?.projectId}
             activeFile={activeFile}
             selectedText={selectedText}
+            appendToEditor={appendToEditor}
           />
         </div>
       </div>

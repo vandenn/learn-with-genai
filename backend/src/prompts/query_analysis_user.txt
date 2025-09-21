@@ -1,17 +1,25 @@
-Analyze the user's message and determine if it requires searching through project files.
+Analyze the user's message and determine what type of response is needed.
 
 User message: "{user_message}"
 
-Reply with "YES" if the message:
+Reply with one of:
+
+"SEARCH" if the message:
 - Asks about specific code, files, or project contents
 - Wants to understand implementation details
 - Asks "how does X work" or "show me X"
 - References specific functions, classes, or features
+Follow with keywords to search for.
 
-Reply with "NO" if the message:
+"ADD_TO_NOTE" if the message:
+- User agrees to add information to their note (e.g., "yes", "add it", "append it", "put it in my notes")
+- User requests to save the discussion to their file
+- User wants to add content to their current document
+
+"GENERAL" if the message:
 - Is a general question about concepts
 - Asks for explanations of programming principles
 - Is asking for learning advice
 - Is a greeting or general conversation
 
-Reply only with YES or NO, followed by keywords to search for if YES.
+Reply only with the type (SEARCH/ADD_TO_NOTE/GENERAL), followed by keywords if applicable.

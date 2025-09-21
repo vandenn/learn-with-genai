@@ -1,0 +1,14 @@
+Based on the previous conversation between the user and assistant, generate content to be appended to the user's notes.
+
+Previous conversation:
+{conversation_content}
+
+Instructions:
+1. Extract the key learning points, explanations, and insights from the conversation
+2. Format everything in proper Markdown syntax
+3. Use appropriate headers (##, ###), bullet points, code blocks, etc.
+4. Make it comprehensive but well-organized
+5. Include examples if they were discussed
+6. Structure it as a standalone section that can be appended to existing notes
+
+Generate ONLY the markdown content to be added to the note - no explanatory text, no "Here's what to add" - just the clean markdown content that should be appended.

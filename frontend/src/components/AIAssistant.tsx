@@ -21,13 +21,29 @@ interface AIAssistantProps {
   activeProjectId?: string;
   activeFile: ActiveFile | null;
   selectedText: string;
+  appendToEditor: ((content: string) => void) | null;
 }
 
-export default function AIAssistant({ activeProjectId, activeFile, selectedText }: AIAssistantProps) {
+export default function AIAssistant({ activeProjectId, activeFile, selectedText, appendToEditor }: AIAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const appendToActiveFile = (content: string) => {
+    if (!appendToEditor) return;
+
+    appendToEditor(content);
+
+    // Show success message
+    const successMessage: Message = {
+      id: `${Date.now()}-success`,
+      type: 'assistant',
+      content: '✅ Content has been added to your note!',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, successMessage]);
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -50,7 +66,7 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText 
 
         if (assistantResponses.length > 0) {
           enhancedMessage += `\n\n--- PREVIOUS CONVERSATION ---\nUser: ${lastUserMessage.content}\n`;
-          assistantResponses.forEach((response, index) => {
+          assistantResponses.forEach((response) => {
             enhancedMessage += `Assistant: ${response.content}\n`;
           });
         }
@@ -114,22 +130,29 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText 
                 try {
                   const data = JSON.parse(line.slice(6));
 
-                  const aiMessage: Message = {
-                    id: `${Date.now()}-${Math.random()}`,
-                    type: 'assistant',
-                    content: data.content,
-                    timestamp: new Date(),
-                  };
-
-                  setMessages(prev => [...prev, aiMessage]);
-
-                  // If this is the final message, stop thinking
-                  if (data.type === 'final') {
+                  if (data.type === 'note') {
+                    // Handle note content by appending to active file
+                    appendToActiveFile(data.content);
                     setIsThinking(false);
-                  }
+                  } else {
+                    // Handle regular messages (step, final)
+                    const aiMessage: Message = {
+                      id: `${Date.now()}-${Math.random()}`,
+                      type: 'assistant',
+                      content: data.content,
+                      timestamp: new Date(),
+                    };
 
-                  // Add a small delay to show messages one by one
-                  await new Promise(resolve => setTimeout(resolve, 100));
+                    setMessages(prev => [...prev, aiMessage]);
+
+                    // If this is the final message, stop thinking
+                    if (data.type === 'final') {
+                      setIsThinking(false);
+                    }
+
+                    // Add a small delay to show messages one by one
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                  }
                 } catch (parseError) {
                   console.error('Error parsing stream data:', parseError);
                 }
