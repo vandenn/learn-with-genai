@@ -48,6 +48,27 @@ def stream_ai_tutor_workflow(user_message: str, current_project_id: str):
                 yield {"type": "final", "content": state["final_response"]}
 
 
+def create_workflow() -> StateGraph:
+    workflow = StateGraph(WorkflowState)
+
+    workflow.add_node("analyze_query", analyze_query)
+    workflow.add_node("search_files", search_files)
+    workflow.add_node("generate_response", generate_response)
+
+    workflow.set_entry_point("analyze_query")
+
+    workflow.add_conditional_edges(
+        "analyze_query",
+        route_next_step,
+        {"search_files": "search_files", "generate_response": "generate_response"},
+    )
+
+    workflow.add_edge("search_files", "generate_response")
+    workflow.add_edge("generate_response", END)
+
+    return workflow.compile()
+
+
 def analyze_query(state: WorkflowState) -> WorkflowState:
     llm = get_llm(is_mini=True)
 
@@ -179,27 +200,6 @@ def route_next_step(state: WorkflowState) -> str:
         return "search_files"
     else:
         return "generate_response"
-
-
-def create_workflow() -> StateGraph:
-    workflow = StateGraph(WorkflowState)
-
-    workflow.add_node("analyze_query", analyze_query)
-    workflow.add_node("search_files", search_files)
-    workflow.add_node("generate_response", generate_response)
-
-    workflow.set_entry_point("analyze_query")
-
-    workflow.add_conditional_edges(
-        "analyze_query",
-        route_next_step,
-        {"search_files": "search_files", "generate_response": "generate_response"},
-    )
-
-    workflow.add_edge("search_files", "generate_response")
-    workflow.add_edge("generate_response", END)
-
-    return workflow.compile()
 
 
 def get_llm(is_mini: bool = True) -> Union[ChatOpenAI, ChatAnthropic]:
