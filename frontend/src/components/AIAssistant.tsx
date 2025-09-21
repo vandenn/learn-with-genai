@@ -10,11 +10,20 @@ interface Message {
 }
 
 
-interface AIAssistantProps {
-  activeProjectId?: string;
+interface ActiveFile {
+  name: string;
+  path: string;
+  content: string;
+  projectId: string;
 }
 
-export default function AIAssistant({ activeProjectId }: AIAssistantProps) {
+interface AIAssistantProps {
+  activeProjectId?: string;
+  activeFile: ActiveFile | null;
+  selectedText: string;
+}
+
+export default function AIAssistant({ activeProjectId, activeFile, selectedText }: AIAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -28,14 +37,25 @@ export default function AIAssistant({ activeProjectId }: AIAssistantProps) {
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeProjectId) return;
 
+    // Build context-enhanced message
+    let enhancedMessage = inputText;
+
+    if (activeFile) {
+      enhancedMessage += `\n\n--- ACTIVE FILE CONTEXT ---\nFile: ${activeFile.name}\nContent:\n${activeFile.content}`;
+
+      if (selectedText.trim()) {
+        enhancedMessage += `\n\n--- HIGHLIGHTED TEXT ---\n${selectedText}`;
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputText,
+      content: inputText, // Show only the user's original input in the UI
       timestamp: new Date(),
     };
 
-    const currentInput = inputText;
+    const currentInput = enhancedMessage; // Send the context-enhanced message to backend
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setIsThinking(true);
@@ -178,7 +198,18 @@ export default function AIAssistant({ activeProjectId }: AIAssistantProps) {
           </div>
         )}
 
-        <div className="p-3">
+        <div className="px-3 pt-1 pb-3">
+          {/* Context Status */}
+          {activeFile && (
+            <div className="mb-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Context: {activeFile.name}
+                {selectedText.trim() && (
+                  <span className="text-blue-500 dark:text-blue-400"> (+ highlighted text)</span>
+                )}
+              </span>
+            </div>
+          )}
           <div className="flex space-x-2">
             <textarea
               value={inputText}

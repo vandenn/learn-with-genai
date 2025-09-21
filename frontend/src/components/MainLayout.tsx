@@ -17,6 +17,7 @@ export default function MainLayout() {
   const [aiPanelWidth, setAiPanelWidth] = useState(30); // percentage
   const [isResizing, setIsResizing] = useState(false);
   const [activeFile, setActiveFile] = useState<ActiveFile | null>(null);
+  const [selectedText, setSelectedText] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -45,6 +46,10 @@ export default function MainLayout() {
 
   const handleFileLoad = useCallback((fileData: ActiveFile) => {
     setActiveFile(fileData);
+  }, []);
+
+  const handleTextSelection = useCallback((text: string) => {
+    setSelectedText(text);
   }, []);
 
   // Add event listeners for mouse events
@@ -82,7 +87,7 @@ export default function MainLayout() {
           className="border-r border-gray-300 dark:border-gray-700"
           style={{ width: `${100 - aiPanelWidth}%` }}
         >
-          <TextEditor activeFile={activeFile} />
+          <TextEditor activeFile={activeFile} onTextSelection={handleTextSelection} />
         </div>
 
         {/* Resize Handle */}
@@ -102,7 +107,11 @@ export default function MainLayout() {
         <div
           style={{ width: `${aiPanelWidth}%`, minWidth: '250px' }}
         >
-          <AIAssistant activeProjectId={activeFile?.projectId} />
+          <AIAssistant
+            activeProjectId={activeFile?.projectId}
+            activeFile={activeFile}
+            selectedText={selectedText}
+          />
         </div>
       </div>
     </div>

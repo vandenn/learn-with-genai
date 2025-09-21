@@ -17,9 +17,10 @@ interface ActiveFile {
 
 interface TextEditorProps {
   activeFile: ActiveFile | null;
+  onTextSelection: (text: string) => void;
 }
 
-export default function TextEditor({ activeFile }: TextEditorProps) {
+export default function TextEditor({ activeFile, onTextSelection }: TextEditorProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
@@ -35,6 +36,15 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
     immediatelyRender: false,
     onUpdate: () => {
       setHasUnsavedChanges(true);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      if (from !== to) {
+        const selectedText = editor.state.doc.textBetween(from, to);
+        onTextSelection(selectedText);
+      } else {
+        onTextSelection('');
+      }
     },
   });
 
