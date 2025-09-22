@@ -722,17 +722,12 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
                 onClick={() => handleProjectSelect(project.id)}
                 onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
               >
-                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between">
-                  <div className="flex items-center min-w-0 flex-1">
-                    <span className="mr-2">📂</span>
-                    <span className="truncate">{project.name}</span>
-                    {config?.active_project_id === project.id && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                        Active
-                      </span>
-                    )}
+                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between overflow-hidden">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <span className="mr-2 flex-shrink-0">📂</span>
+                    <span className="font-medium truncate" title={project.name}>{project.name}</span>
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 ml-2">
+                  <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -780,19 +775,14 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
               .map((project) => (
                 <div key={project.id}>
                   <div
-                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group"
+                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group overflow-hidden"
                     onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
                   >
-                    <div className="flex items-center min-w-0 flex-1">
-                      <span className="mr-2">📂</span>
-                      <span className="truncate">{project.name}</span>
-                      {config?.active_project_id === project.id && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                          Active
-                        </span>
-                      )}
+                    <div className="flex items-center flex-1 min-w-0">
+                      <span className="mr-2 flex-shrink-0">📂</span>
+                      <span className="font-medium truncate" title={project.name}>{project.name}</span>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 ml-2">
+                    <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
