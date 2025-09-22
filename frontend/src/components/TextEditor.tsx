@@ -156,7 +156,7 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
   }, [handleSave]);
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-200 dark:bg-gray-950">
       {/* Header with file info */}
       <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between">
