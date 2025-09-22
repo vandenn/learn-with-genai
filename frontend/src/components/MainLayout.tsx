@@ -45,7 +45,7 @@ export default function MainLayout() {
     setIsResizing(false);
   }, []);
 
-  const handleFileLoad = useCallback((fileData: ActiveFile) => {
+  const handleFileLoad = useCallback((fileData: ActiveFile | null) => {
     setActiveFile(fileData);
   }, []);
 

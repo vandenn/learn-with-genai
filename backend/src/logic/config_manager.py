@@ -15,11 +15,12 @@ def get_active_project() -> Optional[str]:
     return config.active_project_id
 
 
-def set_active_project(project_id: str) -> bool:
-    try:
-        get_single_project(project_id)
-    except ValueError:
-        return False
+def set_active_project(project_id: Optional[str]) -> bool:
+    if project_id is not None:
+        try:
+            get_single_project(project_id)
+        except ValueError:
+            return False
 
     config = load_base_folder_config()
     config.active_project_id = project_id
@@ -33,7 +34,7 @@ def get_active_file() -> Optional[str]:
     return config.active_file_path
 
 
-def set_active_file(file_path: str) -> None:
+def set_active_file(file_path: Optional[str]) -> None:
     config = load_base_folder_config()
     config.active_file_path = file_path
     config.modified = datetime.now()

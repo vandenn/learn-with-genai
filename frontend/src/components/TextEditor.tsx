@@ -8,6 +8,7 @@ import { marked } from 'marked';
 import TurndownService from 'turndown';
 
 const AUTO_SAVE_INTERVAL_MS = 3000;
+const WELCOME_CONTENT = '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>';
 
 interface ActiveFile {
   name: string;
@@ -28,7 +29,7 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
 
   const editor = useEditor({
     extensions: [Selection, StarterKit],
-    content: activeFile ? marked(activeFile.content) : '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>',
+    content: activeFile ? marked(activeFile.content) : WELCOME_CONTENT,
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-full h-full p-8 dark:prose-invert overflow-y-auto',
@@ -52,11 +53,17 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
 
   // Update editor content when activeFile changes
   useEffect(() => {
-    if (editor && activeFile) {
-      // Convert markdown to HTML before setting content
-      const htmlContent = marked(activeFile.content);
-      editor.commands.setContent(htmlContent);
-      setHasUnsavedChanges(false);
+    if (editor) {
+      if (activeFile) {
+        // Convert markdown to HTML before setting content
+        const htmlContent = marked(activeFile.content);
+        editor.commands.setContent(htmlContent);
+        setHasUnsavedChanges(false);
+      } else {
+        // Clear content when no file is active
+        editor.commands.setContent(WELCOME_CONTENT);
+        setHasUnsavedChanges(false);
+      }
     }
   }, [activeFile, editor]);
 
@@ -158,9 +165,11 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
             <span className="font-medium text-gray-800 dark:text-gray-200">
               {activeFile ? `${activeFile.name}.md` : 'No file selected'}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              • {isAutoSaving ? 'Auto-saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
-            </span>
+            {activeFile && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                • {isAutoSaving ? 'Auto-saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-2">
             <button

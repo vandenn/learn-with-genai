@@ -12,7 +12,7 @@ interface ActiveFile {
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  onFileLoad: (fileData: ActiveFile) => void;
+  onFileLoad: (fileData: ActiveFile | null) => void;
 }
 
 interface Project {
@@ -309,7 +309,23 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
             } else {
               // No files left in project, clear the editor
               setActiveFile(null);
-              onFileLoad({ name: '', path: '', content: '', projectId: '' });
+              onFileLoad(null);
+
+              // Update backend config to clear active file
+              try {
+                await fetch(`${API_BASE}/config/active-file`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ file_path: null }),
+                });
+
+                // Update local config state
+                setConfig(prev => prev ? { ...prev, active_file_path: null } : prev);
+              } catch (err) {
+                console.warn('Failed to clear active file in backend config:', err);
+              }
             }
           }
         }
@@ -378,7 +394,32 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
         if (selectedProject === projectId) {
           setSelectedProject(null);
           setActiveFile(null);
-          onFileLoad({ name: '', path: '', content: '', projectId: '' });
+          onFileLoad(null);
+
+          // Update backend config to clear active file and project
+          try {
+            await Promise.all([
+              fetch(`${API_BASE}/config/active-file`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ file_path: null }),
+              }),
+              fetch(`${API_BASE}/config/active-project`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ project_id: null }),
+              })
+            ]);
+
+            // Update local config state
+            setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
+          } catch (err) {
+            console.warn('Failed to clear active states in backend config:', err);
+          }
         }
 
         // Remove from projects list
