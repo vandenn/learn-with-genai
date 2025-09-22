@@ -74,7 +74,7 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
     }
 
     if (activeFile) {
-      enhancedMessage += `\n\n--- ACTIVE FILE CONTEXT ---\nFile: ${activeFile.name}\nContent:\n${activeFile.content}`;
+      enhancedMessage += `\n\n--- ACTIVE FILE CONTENT ---\nFile: ${activeFile.name}\nContent:\n${activeFile.content}`;
 
       if (selectedText.trim()) {
         enhancedMessage += `\n\n--- HIGHLIGHTED TEXT ---\n${selectedText}`;

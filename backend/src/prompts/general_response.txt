@@ -1,3 +1,0 @@
-User question: {user_message}
-
-Please provide a helpful and encouraging educational response.
