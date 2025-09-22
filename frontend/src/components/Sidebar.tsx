@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ConfirmModal, PromptModal } from './Modals';
 
 interface ActiveFile {
   name: string;
@@ -49,7 +50,60 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
     itemId: string;
     projectId?: string;
   } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'default';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+  const [promptModal, setPromptModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    defaultValue: string;
+    onConfirm: (value: string) => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    defaultValue: '',
+    onConfirm: () => {},
+  });
 
+  // Modal helper functions
+  const showConfirmModal = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'default' = 'default') => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      type,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const showPromptModal = (title: string, message: string, defaultValue: string, onConfirm: (value: string) => void) => {
+    setPromptModal({
+      isOpen: true,
+      title,
+      message,
+      defaultValue,
+      onConfirm,
+    });
+  };
+
+  const closePromptModal = () => {
+    setPromptModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   const initializeApp = async () => {
     if (initialized) return;
@@ -219,265 +273,313 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
     }
   };
 
-  const createNewProject = async () => {
-    const projectName = prompt('Enter project name:');
-    if (!projectName) return;
+  const createNewProject = () => {
+    showPromptModal(
+      'Create New Project',
+      'Enter a name for your new project:',
+      '',
+      async (projectName: string) => {
+        closePromptModal();
 
-    try {
-      const response = await fetch(`${API_BASE}/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: projectName }),
-      });
+        try {
+          const response = await fetch(`${API_BASE}/projects`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: projectName }),
+          });
 
-      if (response.ok) {
-        const newProject = await response.json();
-        setProjects(prev => [...prev, newProject]);
+          if (response.ok) {
+            const newProject = await response.json();
+            setProjects(prev => [...prev, newProject]);
 
-        // Set the new project as active and update config
-        await handleProjectSelect(newProject.id);
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to create project: ${errorText}`);
+            // Set the new project as active and update config
+            await handleProjectSelect(newProject.id);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to create project: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error creating project:', err);
+          alert('Failed to create project');
+        }
       }
-    } catch (err) {
-      console.error('Error creating project:', err);
-      alert('Failed to create project');
-    }
+    );
   };
 
-  const createNewFile = async () => {
+  const createNewFile = () => {
     if (!selectedProject) return;
 
-    const fileName = prompt('Enter file name (without .md extension):');
-    if (!fileName) return;
+    showPromptModal(
+      'Create New File',
+      'Enter a name for your new file (without .md extension):',
+      '',
+      async (fileName: string) => {
+        closePromptModal();
 
-    try {
-      const response = await fetch(`${API_BASE}/projects/${selectedProject}/files`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename: fileName }),
-      });
+        try {
+          const response = await fetch(`${API_BASE}/projects/${selectedProject}/files`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filename: fileName }),
+          });
 
-      if (response.ok) {
-        // Reload project contents to show the new file
-        await loadProjectContents(selectedProject);
+          if (response.ok) {
+            // Reload project contents to show the new file
+            await loadProjectContents(selectedProject);
 
-        // Auto-select the new file
-        await handleFileSelect(selectedProject, fileName);
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to create file: ${errorText}`);
+            // Auto-select the new file
+            await handleFileSelect(selectedProject, fileName);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to create file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error creating file:', err);
+          alert('Failed to create file');
+        }
       }
-    } catch (err) {
-      console.error('Error creating file:', err);
-      alert('Failed to create file');
-    }
+    );
   };
 
-  const deleteFile = async (projectId: string, fileName: string) => {
-    if (!confirm(`Are you sure you want to delete "${fileName}.md"?`)) return;
+  const deleteFile = (projectId: string, fileName: string) => {
+    showConfirmModal(
+      'Delete File',
+      `Are you sure you want to delete "${fileName}.md"? This action cannot be undone.`,
+      async () => {
+        closeConfirmModal();
 
-    try {
-      const response = await fetch(`${API_BASE}/projects/${projectId}/files/${fileName}`, {
-        method: 'DELETE',
-      });
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/files/${fileName}`, {
+            method: 'DELETE',
+          });
 
-      if (response.ok) {
-        const project = projects.find(p => p.id === projectId);
-        const wasActiveFile = project && activeFile === `${project.path}/${fileName}.md`;
+          if (response.ok) {
+            const project = projects.find(p => p.id === projectId);
+            const wasActiveFile = project && activeFile === `${project.path}/${fileName}.md`;
 
-        // Get updated project data from the server
-        const projectResponse = await fetch(`${API_BASE}/projects/${projectId}`);
-        if (projectResponse.ok) {
-          const updatedProject = await projectResponse.json();
+            // Get updated project data from the server
+            const projectResponse = await fetch(`${API_BASE}/projects/${projectId}`);
+            if (projectResponse.ok) {
+              const updatedProject = await projectResponse.json();
 
-          // Update the project in the projects state
-          setProjects(prev =>
-            prev.map(p => p.id === projectId ? updatedProject : p)
-          );
+              // Update the project in the projects state
+              setProjects(prev =>
+                prev.map(p => p.id === projectId ? updatedProject : p)
+              );
 
-          // If the deleted file was active, switch to the first available file
-          if (wasActiveFile) {
-            if (updatedProject.file_names && updatedProject.file_names.length > 0) {
-              // Switch to the first file in the project
-              await handleFileSelect(projectId, updatedProject.file_names[0]);
-            } else {
-              // No files left in project, clear the editor
+              // If the deleted file was active, switch to the first available file
+              if (wasActiveFile) {
+                if (updatedProject.file_names && updatedProject.file_names.length > 0) {
+                  // Switch to the first file in the project
+                  await handleFileSelect(projectId, updatedProject.file_names[0]);
+                } else {
+                  // No files left in project, clear the editor
+                  setActiveFile(null);
+                  onFileLoad(null);
+
+                  // Update backend config to clear active file
+                  try {
+                    await fetch(`${API_BASE}/config/active-file`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ file_path: null }),
+                    });
+
+                    // Update local config state
+                    setConfig(prev => prev ? { ...prev, active_file_path: null } : prev);
+                  } catch (err) {
+                    console.warn('Failed to clear active file in backend config:', err);
+                  }
+                }
+              }
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to delete file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error deleting file:', err);
+          alert('Failed to delete file');
+        }
+      },
+      'danger'
+    );
+  };
+
+  const renameFile = (projectId: string, oldFileName: string) => {
+    showPromptModal(
+      'Rename File',
+      'Enter new file name (without .md extension):',
+      oldFileName,
+      async (newFileName: string) => {
+        if (newFileName === oldFileName) {
+          closePromptModal();
+          return;
+        }
+
+        closePromptModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/files/${oldFileName}/rename`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newFileName }),
+          });
+
+          if (response.ok) {
+            const renamedFile = await response.json();
+
+            // Update active file path if it was the renamed file
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+              const oldFilePath = `${project.path}/${oldFileName}.md`;
+              if (activeFile === oldFilePath) {
+                setActiveFile(renamedFile.path);
+                // Load the renamed file content
+                await handleFileSelect(projectId, newFileName);
+              }
+            }
+
+            // Reload project contents
+            await loadProjectContents(projectId);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to rename file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error renaming file:', err);
+          alert('Failed to rename file');
+        }
+      }
+    );
+  };
+
+  const deleteProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    showConfirmModal(
+      'Delete Project',
+      `Are you sure you want to delete the entire project "${project.name}" and all its files? This action cannot be undone.`,
+      async () => {
+        closeConfirmModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+            method: 'DELETE',
+          });
+
+          if (response.ok) {
+            // Clear active states if this was the active project
+            if (selectedProject === projectId) {
+              setSelectedProject(null);
               setActiveFile(null);
               onFileLoad(null);
 
-              // Update backend config to clear active file
+              // Update backend config to clear active file and project
               try {
-                await fetch(`${API_BASE}/config/active-file`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ file_path: null }),
-                });
+                await Promise.all([
+                  fetch(`${API_BASE}/config/active-file`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ file_path: null }),
+                  }),
+                  fetch(`${API_BASE}/config/active-project`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ project_id: null }),
+                  })
+                ]);
 
                 // Update local config state
-                setConfig(prev => prev ? { ...prev, active_file_path: null } : prev);
+                setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
               } catch (err) {
-                console.warn('Failed to clear active file in backend config:', err);
+                console.warn('Failed to clear active states in backend config:', err);
               }
             }
+
+            // Remove from projects list
+            setProjects(prev => prev.filter(p => p.id !== projectId));
+
+            // Update config if this was the active project
+            if (config?.active_project_id === projectId) {
+              setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to delete project: ${errorText}`);
           }
+        } catch (err) {
+          console.error('Error deleting project:', err);
+          alert('Failed to delete project');
         }
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to delete file: ${errorText}`);
-      }
-    } catch (err) {
-      console.error('Error deleting file:', err);
-      alert('Failed to delete file');
-    }
+      },
+      'danger'
+    );
   };
 
-  const renameFile = async (projectId: string, oldFileName: string) => {
-    const newFileName = prompt('Enter new file name (without .md extension):', oldFileName);
-    if (!newFileName || newFileName === oldFileName) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/projects/${projectId}/files/${oldFileName}/rename`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ new_name: newFileName }),
-      });
-
-      if (response.ok) {
-        const renamedFile = await response.json();
-
-        // Update active file path if it was the renamed file
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
-          const oldFilePath = `${project.path}/${oldFileName}.md`;
-          if (activeFile === oldFilePath) {
-            setActiveFile(renamedFile.path);
-            // Load the renamed file content
-            await handleFileSelect(projectId, newFileName);
-          }
-        }
-
-        // Reload project contents
-        await loadProjectContents(projectId);
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to rename file: ${errorText}`);
-      }
-    } catch (err) {
-      console.error('Error renaming file:', err);
-      alert('Failed to rename file');
-    }
-  };
-
-  const deleteProject = async (projectId: string) => {
+  const renameProject = (projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
 
-    if (!confirm(`Are you sure you want to delete the entire project "${project.name}" and all its files?`)) return;
+    showPromptModal(
+      'Rename Project',
+      'Enter new project name:',
+      project.name,
+      async (newName: string) => {
+        if (newName === project.name) {
+          closePromptModal();
+          return;
+        }
 
-    try {
-      const response = await fetch(`${API_BASE}/projects/${projectId}`, {
-        method: 'DELETE',
-      });
+        closePromptModal();
 
-      if (response.ok) {
-        // Clear active states if this was the active project
-        if (selectedProject === projectId) {
-          setSelectedProject(null);
-          setActiveFile(null);
-          onFileLoad(null);
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/rename`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newName }),
+          });
 
-          // Update backend config to clear active file and project
-          try {
-            await Promise.all([
-              fetch(`${API_BASE}/config/active-file`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ file_path: null }),
-              }),
-              fetch(`${API_BASE}/config/active-project`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ project_id: null }),
-              })
-            ]);
+          if (response.ok) {
+            const renamedProject = await response.json();
 
-            // Update local config state
-            setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
-          } catch (err) {
-            console.warn('Failed to clear active states in backend config:', err);
+            // Update projects list
+            setProjects(prev => prev.map(p => p.id === projectId ? renamedProject : p));
+
+            // Update selected project if it was the renamed one
+            if (selectedProject === projectId) {
+              setSelectedProject(renamedProject.id);
+            }
+
+            // Update config if this was the active project
+            if (config?.active_project_id === projectId) {
+              setConfig(prev => prev ? { ...prev, active_project_id: renamedProject.id } : prev);
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to rename project: ${errorText}`);
           }
+        } catch (err) {
+          console.error('Error renaming project:', err);
+          alert('Failed to rename project');
         }
-
-        // Remove from projects list
-        setProjects(prev => prev.filter(p => p.id !== projectId));
-
-        // Update config if this was the active project
-        if (config?.active_project_id === projectId) {
-          setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
-        }
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to delete project: ${errorText}`);
       }
-    } catch (err) {
-      console.error('Error deleting project:', err);
-      alert('Failed to delete project');
-    }
-  };
-
-  const renameProject = async (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
-
-    const newName = prompt('Enter new project name:', project.name);
-    if (!newName || newName === project.name) return;
-
-    try {
-      const response = await fetch(`${API_BASE}/projects/${projectId}/rename`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ new_name: newName }),
-      });
-
-      if (response.ok) {
-        const renamedProject = await response.json();
-
-        // Update projects list
-        setProjects(prev => prev.map(p => p.id === projectId ? renamedProject : p));
-
-        // Update selected project if it was the renamed one
-        if (selectedProject === projectId) {
-          setSelectedProject(renamedProject.id);
-        }
-
-        // Update config if this was the active project
-        if (config?.active_project_id === projectId) {
-          setConfig(prev => prev ? { ...prev, active_project_id: renamedProject.id } : prev);
-        }
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to rename project: ${errorText}`);
-      }
-    } catch (err) {
-      console.error('Error renaming project:', err);
-      alert('Failed to rename project');
-    }
+    );
   };
 
   const handleContextMenu = (e: React.MouseEvent, type: 'file' | 'project', itemId: string, projectId?: string) => {
@@ -801,6 +903,26 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
           )}
         </div>
       )}
+
+      {/* Modals */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+        confirmText={confirmModal.type === 'danger' ? 'Delete' : 'Confirm'}
+        type={confirmModal.type}
+      />
+
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        title={promptModal.title}
+        message={promptModal.message}
+        defaultValue={promptModal.defaultValue}
+        onConfirm={promptModal.onConfirm}
+        onCancel={closePromptModal}
+      />
     </div>
   );
 }
