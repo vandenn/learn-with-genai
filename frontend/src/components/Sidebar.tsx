@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ConfirmModal, PromptModal } from './Modals';
 
 interface ActiveFile {
   name: string;
@@ -12,7 +13,7 @@ interface ActiveFile {
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  onFileLoad: (fileData: ActiveFile) => void;
+  onFileLoad: (fileData: ActiveFile | null) => void;
 }
 
 interface Project {
@@ -42,7 +43,67 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: 'file' | 'project';
+    itemId: string;
+    projectId?: string;
+  } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'default';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+  const [promptModal, setPromptModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    defaultValue: string;
+    onConfirm: (value: string) => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    defaultValue: '',
+    onConfirm: () => {},
+  });
 
+  // Modal helper functions
+  const showConfirmModal = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'default' = 'default') => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      type,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const showPromptModal = (title: string, message: string, defaultValue: string, onConfirm: (value: string) => void) => {
+    setPromptModal({
+      isOpen: true,
+      title,
+      message,
+      defaultValue,
+      onConfirm,
+    });
+  };
+
+  const closePromptModal = () => {
+    setPromptModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   const initializeApp = async () => {
     if (initialized) return;
@@ -212,65 +273,338 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
     }
   };
 
-  const createNewProject = async () => {
-    const projectName = prompt('Enter project name:');
-    if (!projectName) return;
+  const createNewProject = () => {
+    showPromptModal(
+      'Create New Project',
+      'Enter a name for your new project:',
+      '',
+      async (projectName: string) => {
+        closePromptModal();
 
-    try {
-      const response = await fetch(`${API_BASE}/projects`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: projectName }),
-      });
+        try {
+          const response = await fetch(`${API_BASE}/projects`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: projectName }),
+          });
 
-      if (response.ok) {
-        const newProject = await response.json();
-        setProjects(prev => [...prev, newProject]);
+          if (response.ok) {
+            const newProject = await response.json();
+            setProjects(prev => [...prev, newProject]);
 
-        // Set the new project as active and update config
-        await handleProjectSelect(newProject.id);
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to create project: ${errorText}`);
+            // Set the new project as active and update config
+            await handleProjectSelect(newProject.id);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to create project: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error creating project:', err);
+          alert('Failed to create project');
+        }
       }
-    } catch (err) {
-      console.error('Error creating project:', err);
-      alert('Failed to create project');
-    }
+    );
   };
 
-  const createNewFile = async () => {
+  const createNewFile = () => {
     if (!selectedProject) return;
 
-    const fileName = prompt('Enter file name (without .md extension):');
-    if (!fileName) return;
+    showPromptModal(
+      'Create New File',
+      'Enter a name for your new file (without .md extension):',
+      '',
+      async (fileName: string) => {
+        closePromptModal();
 
-    try {
-      const response = await fetch(`${API_BASE}/projects/${selectedProject}/files`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename: fileName }),
-      });
+        try {
+          const response = await fetch(`${API_BASE}/projects/${selectedProject}/files`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filename: fileName }),
+          });
 
-      if (response.ok) {
-        // Reload project contents to show the new file
-        await loadProjectContents(selectedProject);
+          if (response.ok) {
+            // Reload project contents to show the new file
+            await loadProjectContents(selectedProject);
 
-        // Auto-select the new file
-        await handleFileSelect(selectedProject, fileName);
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to create file: ${errorText}`);
+            // Auto-select the new file
+            await handleFileSelect(selectedProject, fileName);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to create file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error creating file:', err);
+          alert('Failed to create file');
+        }
       }
-    } catch (err) {
-      console.error('Error creating file:', err);
-      alert('Failed to create file');
-    }
+    );
   };
+
+  const deleteFile = (projectId: string, fileName: string) => {
+    showConfirmModal(
+      'Delete File',
+      `Are you sure you want to delete "${fileName}.md"? This action cannot be undone.`,
+      async () => {
+        closeConfirmModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/files/${fileName}`, {
+            method: 'DELETE',
+          });
+
+          if (response.ok) {
+            const project = projects.find(p => p.id === projectId);
+            const wasActiveFile = project && activeFile === `${project.path}/${fileName}.md`;
+
+            // Get updated project data from the server
+            const projectResponse = await fetch(`${API_BASE}/projects/${projectId}`);
+            if (projectResponse.ok) {
+              const updatedProject = await projectResponse.json();
+
+              // Update the project in the projects state
+              setProjects(prev =>
+                prev.map(p => p.id === projectId ? updatedProject : p)
+              );
+
+              // If the deleted file was active, switch to the first available file
+              if (wasActiveFile) {
+                if (updatedProject.file_names && updatedProject.file_names.length > 0) {
+                  // Switch to the first file in the project
+                  await handleFileSelect(projectId, updatedProject.file_names[0]);
+                } else {
+                  // No files left in project, clear the editor
+                  setActiveFile(null);
+                  onFileLoad(null);
+
+                  // Update backend config to clear active file
+                  try {
+                    await fetch(`${API_BASE}/config/active-file`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ file_path: null }),
+                    });
+
+                    // Update local config state
+                    setConfig(prev => prev ? { ...prev, active_file_path: null } : prev);
+                  } catch (err) {
+                    console.warn('Failed to clear active file in backend config:', err);
+                  }
+                }
+              }
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to delete file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error deleting file:', err);
+          alert('Failed to delete file');
+        }
+      },
+      'danger'
+    );
+  };
+
+  const renameFile = (projectId: string, oldFileName: string) => {
+    showPromptModal(
+      'Rename File',
+      'Enter new file name (without .md extension):',
+      oldFileName,
+      async (newFileName: string) => {
+        if (newFileName === oldFileName) {
+          closePromptModal();
+          return;
+        }
+
+        closePromptModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/files/${oldFileName}/rename`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newFileName }),
+          });
+
+          if (response.ok) {
+            const renamedFile = await response.json();
+
+            // Update active file path if it was the renamed file
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+              const oldFilePath = `${project.path}/${oldFileName}.md`;
+              if (activeFile === oldFilePath) {
+                setActiveFile(renamedFile.path);
+                // Load the renamed file content
+                await handleFileSelect(projectId, newFileName);
+              }
+            }
+
+            // Reload project contents
+            await loadProjectContents(projectId);
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to rename file: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error renaming file:', err);
+          alert('Failed to rename file');
+        }
+      }
+    );
+  };
+
+  const deleteProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    showConfirmModal(
+      'Delete Project',
+      `Are you sure you want to delete the entire project "${project.name}" and all its files? This action cannot be undone.`,
+      async () => {
+        closeConfirmModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+            method: 'DELETE',
+          });
+
+          if (response.ok) {
+            // Clear active states if this was the active project
+            if (selectedProject === projectId) {
+              setSelectedProject(null);
+              setActiveFile(null);
+              onFileLoad(null);
+
+              // Update backend config to clear active file and project
+              try {
+                await Promise.all([
+                  fetch(`${API_BASE}/config/active-file`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ file_path: null }),
+                  }),
+                  fetch(`${API_BASE}/config/active-project`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ project_id: null }),
+                  })
+                ]);
+
+                // Update local config state
+                setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
+              } catch (err) {
+                console.warn('Failed to clear active states in backend config:', err);
+              }
+            }
+
+            // Remove from projects list
+            setProjects(prev => prev.filter(p => p.id !== projectId));
+
+            // Update config if this was the active project
+            if (config?.active_project_id === projectId) {
+              setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to delete project: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error deleting project:', err);
+          alert('Failed to delete project');
+        }
+      },
+      'danger'
+    );
+  };
+
+  const renameProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    showPromptModal(
+      'Rename Project',
+      'Enter new project name:',
+      project.name,
+      async (newName: string) => {
+        if (newName === project.name) {
+          closePromptModal();
+          return;
+        }
+
+        closePromptModal();
+
+        try {
+          const response = await fetch(`${API_BASE}/projects/${projectId}/rename`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_name: newName }),
+          });
+
+          if (response.ok) {
+            const renamedProject = await response.json();
+
+            // Update projects list
+            setProjects(prev => prev.map(p => p.id === projectId ? renamedProject : p));
+
+            // Update selected project if it was the renamed one
+            if (selectedProject === projectId) {
+              setSelectedProject(renamedProject.id);
+            }
+
+            // Update config if this was the active project
+            if (config?.active_project_id === projectId) {
+              setConfig(prev => prev ? { ...prev, active_project_id: renamedProject.id } : prev);
+            }
+          } else {
+            const errorText = await response.text();
+            alert(`Failed to rename project: ${errorText}`);
+          }
+        } catch (err) {
+          console.error('Error renaming project:', err);
+          alert('Failed to rename project');
+        }
+      }
+    );
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, type: 'file' | 'project', itemId: string, projectId?: string) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      itemId,
+      projectId,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClick = () => closeContextMenu();
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
 
   const renderFileList = (fileNames: string[], projectId: string) => {
     const project = projects.find(p => p.id === projectId);
@@ -283,15 +617,40 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
       return (
         <div key={fileName}>
           <div
-            className={`flex items-center py-1 px-2 cursor-pointer rounded ${
+            className={`flex items-center justify-between py-1 px-2 cursor-pointer rounded group ${
               isActive
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
                 : 'hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
             onClick={() => handleFileSelect(projectId, fileName)}
+            onContextMenu={(e) => handleContextMenu(e, 'file', fileName, projectId)}
           >
-            <span className="mr-2">📄</span>
-            <span className="text-sm truncate">{fileName}.md</span>
+            <div className="flex items-center flex-1 min-w-0">
+              <span className="mr-2">📄</span>
+              <span className="text-sm truncate">{fileName}.md</span>
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  renameFile(projectId, fileName);
+                }}
+                className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                title="Rename file"
+              >
+                <span className="text-xs">✏️</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteFile(projectId, fileName);
+                }}
+                className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                title="Delete file"
+              >
+                <span className="text-xs">🗑️</span>
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -355,21 +714,41 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
             {projects.map((project) => (
               <div
                 key={project.id}
-                className={`mx-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                className={`mx-2 p-3 border rounded-lg cursor-pointer transition-colors group ${
                   config?.active_project_id === project.id
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => handleProjectSelect(project.id)}
+                onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
               >
-                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center">
-                  <span className="mr-2">📂</span>
-                  {project.name}
-                  {config?.active_project_id === project.id && (
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                      Active
-                    </span>
-                  )}
+                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between overflow-hidden">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <span className="mr-2 flex-shrink-0">📂</span>
+                    <span className="font-medium truncate" title={project.name}>{project.name}</span>
+                  </div>
+                  <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        renameProject(project.id);
+                      }}
+                      className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                      title="Rename project"
+                    >
+                      <span className="text-xs">✏️</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id);
+                      }}
+                      className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                      title="Delete project"
+                    >
+                      <span className="text-xs">🗑️</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {project.file_names.length} files
@@ -395,14 +774,36 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
               .filter((project) => project.id === selectedProject)
               .map((project) => (
                 <div key={project.id}>
-                  <div className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center">
-                    <span className="mr-2">📂</span>
-                    {project.name}
-                    {config?.active_project_id === project.id && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                        Active
-                      </span>
-                    )}
+                  <div
+                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group overflow-hidden"
+                    onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
+                  >
+                    <div className="flex items-center flex-1 min-w-0">
+                      <span className="mr-2 flex-shrink-0">📂</span>
+                      <span className="font-medium truncate" title={project.name}>{project.name}</span>
+                    </div>
+                    <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          renameProject(project.id);
+                        }}
+                        className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                        title="Rename project"
+                      >
+                        <span className="text-xs">✏️</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteProject(project.id);
+                        }}
+                        className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                        title="Delete project"
+                      >
+                        <span className="text-xs">🗑️</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="ml-2">
                     {renderFileList(project.file_names, project.id)}
@@ -432,6 +833,86 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
           </button>
         </div>
       )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg py-1 z-50"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {contextMenu.type === 'file' ? (
+            <>
+              <button
+                onClick={() => {
+                  renameFile(contextMenu.projectId!, contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+              >
+                <span className="mr-2">✏️</span>
+                Rename
+              </button>
+              <button
+                onClick={() => {
+                  deleteFile(contextMenu.projectId!, contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-red-100 dark:hover:bg-red-800 text-red-600 dark:text-red-400 flex items-center"
+              >
+                <span className="mr-2">🗑️</span>
+                Delete
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  renameProject(contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+              >
+                <span className="mr-2">✏️</span>
+                Rename Project
+              </button>
+              <button
+                onClick={() => {
+                  deleteProject(contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-red-100 dark:hover:bg-red-800 text-red-600 dark:text-red-400 flex items-center"
+              >
+                <span className="mr-2">🗑️</span>
+                Delete Project
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Modals */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+        confirmText={confirmModal.type === 'danger' ? 'Delete' : 'Confirm'}
+        type={confirmModal.type}
+      />
+
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        title={promptModal.title}
+        message={promptModal.message}
+        defaultValue={promptModal.defaultValue}
+        onConfirm={promptModal.onConfirm}
+        onCancel={closePromptModal}
+      />
     </div>
   );
 }

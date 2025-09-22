@@ -36,7 +36,7 @@ async def get_active_project():
 async def set_active_project(request: SetActiveProjectRequest):
     try:
         success = config_manager.set_active_project(request.project_id)
-        if not success:
+        if not success and request.project_id is not None:
             raise HTTPException(status_code=404, detail="Project not found")
         return SuccessResponse(success=True)
     except ValueError as e:

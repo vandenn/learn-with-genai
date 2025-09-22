@@ -15,11 +15,11 @@ class CreateProjectRequest(BaseModel):
 
 
 class SetActiveProjectRequest(BaseModel):
-    project_id: str
+    project_id: Optional[str]
 
 
 class SetActiveFileRequest(BaseModel):
-    file_path: str
+    file_path: Optional[str]
 
 
 class CreateFileRequest(BaseModel):
@@ -41,6 +41,14 @@ class SetBaseFolderRequest(BaseModel):
 class AITutorChatRequest(BaseModel):
     message: str
     project_id: str
+
+
+class RenameFileRequest(BaseModel):
+    new_name: str
+
+
+class RenameProjectRequest(BaseModel):
+    new_name: str
 
 
 # ================================
