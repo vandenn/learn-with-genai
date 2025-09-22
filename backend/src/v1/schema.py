@@ -43,6 +43,14 @@ class AITutorChatRequest(BaseModel):
     project_id: str
 
 
+class RenameFileRequest(BaseModel):
+    new_name: str
+
+
+class RenameProjectRequest(BaseModel):
+    new_name: str
+
+
 # ================================
 # RESPONSE SCHEMAS
 # ================================

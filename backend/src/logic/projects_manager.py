@@ -201,6 +201,108 @@ def create_file(project_id: str, filename: str) -> FileContent:
     )
 
 
+def delete_file(project_id: str, file_id: str) -> bool:
+    project = get_single_project(project_id)
+    data_path = settings.data_path
+    file_path = data_path / project.path / f"{file_id}.md"
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"File does not exist: {file_id}")
+
+    try:
+        file_path.resolve().relative_to(data_path.resolve())
+    except ValueError:
+        raise ValueError("File path is outside allowed directory")
+
+    try:
+        file_path.unlink()
+        return True
+    except Exception:
+        return False
+
+
+def rename_file(project_id: str, old_file_id: str, new_file_id: str) -> FileContent:
+    project = get_single_project(project_id)
+    data_path = settings.data_path
+    project_path = data_path / project.path
+
+    old_file_path = project_path / f"{old_file_id}.md"
+
+    if not old_file_path.exists():
+        raise FileNotFoundError(f"File does not exist: {old_file_id}")
+
+    safe_new_filename = "".join(
+        c for c in new_file_id if c.isalnum() or c in (" ", "-", "_")
+    ).strip()
+    if not safe_new_filename:
+        raise ValueError(f"Invalid filename: {new_file_id}")
+
+    new_file_path = project_path / f"{safe_new_filename}.md"
+
+    if new_file_path.exists():
+        raise ValueError(f"File already exists: {safe_new_filename}")
+
+    try:
+        old_file_path.rename(new_file_path)
+    except Exception as e:
+        raise ValueError(f"Failed to rename file: {str(e)}")
+
+    stat = new_file_path.stat()
+
+    with open(new_file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    return FileContent(
+        name=new_file_path.stem,
+        path=str(new_file_path.relative_to(data_path)),
+        content=content,
+        modified=datetime.fromtimestamp(stat.st_mtime),
+        size=stat.st_size,
+    )
+
+
+def rename_project(project_id: str, new_name: str) -> Project:
+    data_path = settings.data_path
+    old_project_path = data_path / project_id
+
+    if not old_project_path.exists():
+        raise ValueError(f"Project not found: {project_id}")
+
+    safe_new_name = "".join(
+        c for c in new_name if c.isalnum() or c in (" ", "-", "_")
+    ).strip()
+    if not safe_new_name:
+        raise ValueError(f"Invalid project name: {new_name}")
+
+    new_project_path = data_path / safe_new_name
+
+    if new_project_path.exists():
+        raise ValueError(f"Project with name already exists: {safe_new_name}")
+
+    try:
+        old_project_path.rename(new_project_path)
+    except Exception as e:
+        raise ValueError(f"Failed to rename project: {str(e)}")
+
+    return get_project_object_from_path(new_project_path)
+
+
+def delete_project(project_id: str) -> bool:
+    data_path = settings.data_path
+    project_path = data_path / project_id
+
+    if not project_path.exists():
+        raise ValueError(f"Project not found: {project_id}")
+
+    try:
+        import shutil
+
+        shutil.rmtree(project_path)
+        return True
+    except Exception:
+        return False
+
+
 def get_project_file_names(directory: Path) -> List[str]:
     file_names = []
 

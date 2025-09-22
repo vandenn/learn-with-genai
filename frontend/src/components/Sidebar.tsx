@@ -42,6 +42,13 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: 'file' | 'project';
+    itemId: string;
+    projectId?: string;
+  } | null>(null);
 
 
   const initializeApp = async () => {
@@ -272,6 +279,190 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
     }
   };
 
+  const deleteFile = async (projectId: string, fileName: string) => {
+    if (!confirm(`Are you sure you want to delete "${fileName}.md"?`)) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/projects/${projectId}/files/${fileName}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const project = projects.find(p => p.id === projectId);
+        const wasActiveFile = project && activeFile === `${project.path}/${fileName}.md`;
+
+        // Get updated project data from the server
+        const projectResponse = await fetch(`${API_BASE}/projects/${projectId}`);
+        if (projectResponse.ok) {
+          const updatedProject = await projectResponse.json();
+
+          // Update the project in the projects state
+          setProjects(prev =>
+            prev.map(p => p.id === projectId ? updatedProject : p)
+          );
+
+          // If the deleted file was active, switch to the first available file
+          if (wasActiveFile) {
+            if (updatedProject.file_names && updatedProject.file_names.length > 0) {
+              // Switch to the first file in the project
+              await handleFileSelect(projectId, updatedProject.file_names[0]);
+            } else {
+              // No files left in project, clear the editor
+              setActiveFile(null);
+              onFileLoad({ name: '', path: '', content: '', projectId: '' });
+            }
+          }
+        }
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to delete file: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error deleting file:', err);
+      alert('Failed to delete file');
+    }
+  };
+
+  const renameFile = async (projectId: string, oldFileName: string) => {
+    const newFileName = prompt('Enter new file name (without .md extension):', oldFileName);
+    if (!newFileName || newFileName === oldFileName) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/projects/${projectId}/files/${oldFileName}/rename`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ new_name: newFileName }),
+      });
+
+      if (response.ok) {
+        const renamedFile = await response.json();
+
+        // Update active file path if it was the renamed file
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          const oldFilePath = `${project.path}/${oldFileName}.md`;
+          if (activeFile === oldFilePath) {
+            setActiveFile(renamedFile.path);
+            // Load the renamed file content
+            await handleFileSelect(projectId, newFileName);
+          }
+        }
+
+        // Reload project contents
+        await loadProjectContents(projectId);
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to rename file: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error renaming file:', err);
+      alert('Failed to rename file');
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    if (!confirm(`Are you sure you want to delete the entire project "${project.name}" and all its files?`)) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Clear active states if this was the active project
+        if (selectedProject === projectId) {
+          setSelectedProject(null);
+          setActiveFile(null);
+          onFileLoad({ name: '', path: '', content: '', projectId: '' });
+        }
+
+        // Remove from projects list
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+
+        // Update config if this was the active project
+        if (config?.active_project_id === projectId) {
+          setConfig(prev => prev ? { ...prev, active_project_id: null, active_file_path: null } : prev);
+        }
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to delete project: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      alert('Failed to delete project');
+    }
+  };
+
+  const renameProject = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const newName = prompt('Enter new project name:', project.name);
+    if (!newName || newName === project.name) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/projects/${projectId}/rename`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ new_name: newName }),
+      });
+
+      if (response.ok) {
+        const renamedProject = await response.json();
+
+        // Update projects list
+        setProjects(prev => prev.map(p => p.id === projectId ? renamedProject : p));
+
+        // Update selected project if it was the renamed one
+        if (selectedProject === projectId) {
+          setSelectedProject(renamedProject.id);
+        }
+
+        // Update config if this was the active project
+        if (config?.active_project_id === projectId) {
+          setConfig(prev => prev ? { ...prev, active_project_id: renamedProject.id } : prev);
+        }
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to rename project: ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error renaming project:', err);
+      alert('Failed to rename project');
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, type: 'file' | 'project', itemId: string, projectId?: string) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      itemId,
+      projectId,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClick = () => closeContextMenu();
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
+
   const renderFileList = (fileNames: string[], projectId: string) => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return [];
@@ -283,15 +474,40 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
       return (
         <div key={fileName}>
           <div
-            className={`flex items-center py-1 px-2 cursor-pointer rounded ${
+            className={`flex items-center justify-between py-1 px-2 cursor-pointer rounded group ${
               isActive
                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
                 : 'hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
             onClick={() => handleFileSelect(projectId, fileName)}
+            onContextMenu={(e) => handleContextMenu(e, 'file', fileName, projectId)}
           >
-            <span className="mr-2">📄</span>
-            <span className="text-sm truncate">{fileName}.md</span>
+            <div className="flex items-center flex-1 min-w-0">
+              <span className="mr-2">📄</span>
+              <span className="text-sm truncate">{fileName}.md</span>
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  renameFile(projectId, fileName);
+                }}
+                className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                title="Rename file"
+              >
+                <span className="text-xs">✏️</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteFile(projectId, fileName);
+                }}
+                className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                title="Delete file"
+              >
+                <span className="text-xs">🗑️</span>
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -355,21 +571,46 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
             {projects.map((project) => (
               <div
                 key={project.id}
-                className={`mx-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                className={`mx-2 p-3 border rounded-lg cursor-pointer transition-colors group ${
                   config?.active_project_id === project.id
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 onClick={() => handleProjectSelect(project.id)}
+                onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
               >
-                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center">
-                  <span className="mr-2">📂</span>
-                  {project.name}
-                  {config?.active_project_id === project.id && (
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                      Active
-                    </span>
-                  )}
+                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <span className="mr-2">📂</span>
+                    <span className="truncate">{project.name}</span>
+                    {config?.active_project_id === project.id && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 ml-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        renameProject(project.id);
+                      }}
+                      className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                      title="Rename project"
+                    >
+                      <span className="text-xs">✏️</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id);
+                      }}
+                      className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                      title="Delete project"
+                    >
+                      <span className="text-xs">🗑️</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {project.file_names.length} files
@@ -395,14 +636,41 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
               .filter((project) => project.id === selectedProject)
               .map((project) => (
                 <div key={project.id}>
-                  <div className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center">
-                    <span className="mr-2">📂</span>
-                    {project.name}
-                    {config?.active_project_id === project.id && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
-                        Active
-                      </span>
-                    )}
+                  <div
+                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group"
+                    onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
+                  >
+                    <div className="flex items-center min-w-0 flex-1">
+                      <span className="mr-2">📂</span>
+                      <span className="truncate">{project.name}</span>
+                      {config?.active_project_id === project.id && (
+                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 ml-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          renameProject(project.id);
+                        }}
+                        className="p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                        title="Rename project"
+                      >
+                        <span className="text-xs">✏️</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteProject(project.id);
+                        }}
+                        className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-800"
+                        title="Delete project"
+                      >
+                        <span className="text-xs">🗑️</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="ml-2">
                     {renderFileList(project.file_names, project.id)}
@@ -430,6 +698,66 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
           >
             New Project
           </button>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg py-1 z-50"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {contextMenu.type === 'file' ? (
+            <>
+              <button
+                onClick={() => {
+                  renameFile(contextMenu.projectId!, contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+              >
+                <span className="mr-2">✏️</span>
+                Rename
+              </button>
+              <button
+                onClick={() => {
+                  deleteFile(contextMenu.projectId!, contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-red-100 dark:hover:bg-red-800 text-red-600 dark:text-red-400 flex items-center"
+              >
+                <span className="mr-2">🗑️</span>
+                Delete
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  renameProject(contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+              >
+                <span className="mr-2">✏️</span>
+                Rename Project
+              </button>
+              <button
+                onClick={() => {
+                  deleteProject(contextMenu.itemId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-red-100 dark:hover:bg-red-800 text-red-600 dark:text-red-400 flex items-center"
+              >
+                <span className="mr-2">🗑️</span>
+                Delete Project
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
