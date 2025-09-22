@@ -181,7 +181,7 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              Save
+              Save (Ctrl + S)
             </button>
           </div>
         </div>
