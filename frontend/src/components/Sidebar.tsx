@@ -722,12 +722,12 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
                 onClick={() => handleProjectSelect(project.id)}
                 onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
               >
-                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between overflow-hidden">
+                <div className="font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between overflow-hidden h-6">
                   <div className="flex items-center flex-1 min-w-0">
                     <span className="mr-2 flex-shrink-0">📂</span>
                     <span className="font-medium truncate" title={project.name}>{project.name}</span>
                   </div>
-                  <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
+                  <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0 h-6">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -775,14 +775,14 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
               .map((project) => (
                 <div key={project.id}>
                   <div
-                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group overflow-hidden"
+                    className="font-medium text-gray-800 dark:text-gray-200 mb-2 px-2 flex items-center justify-between group overflow-hidden h-6"
                     onContextMenu={(e) => handleContextMenu(e, 'project', project.id)}
                   >
                     <div className="flex items-center flex-1 min-w-0">
                       <span className="mr-2 flex-shrink-0">📂</span>
                       <span className="font-medium truncate" title={project.name}>{project.name}</span>
                     </div>
-                    <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0">
+                    <div className="hidden group-hover:flex items-center space-x-1 ml-2 flex-shrink-0 h-6">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
