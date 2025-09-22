@@ -73,8 +73,6 @@ export default function Sidebar({ collapsed, onToggle, onFileLoad }: SidebarProp
         const configData = await response.json();
         setConfig(configData);
 
-        console.log(configData);
-
         // Set selected project to active project if available and load its contents
         if (configData.active_project_id) {
           setSelectedProject(configData.active_project_id);

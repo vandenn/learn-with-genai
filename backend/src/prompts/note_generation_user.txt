@@ -1,0 +1,5 @@
+<context>
+Based on the previous conversation between the user and assistant, here is the previous conversation. 
+
+{conversation_content}
+</context>

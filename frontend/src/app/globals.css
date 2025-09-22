@@ -26,3 +26,7 @@ body {
   color: var(--foreground);
   font-family: "Open Sans", system-ui, sans-serif;
 }
+
+.selection {
+  background-color: rgba(207, 207, 207, 0.43);
+}

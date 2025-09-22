@@ -17,6 +17,8 @@ export default function MainLayout() {
   const [aiPanelWidth, setAiPanelWidth] = useState(30); // percentage
   const [isResizing, setIsResizing] = useState(false);
   const [activeFile, setActiveFile] = useState<ActiveFile | null>(null);
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [appendToEditor, setAppendToEditor] = useState<((content: string) => void) | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -45,6 +47,14 @@ export default function MainLayout() {
 
   const handleFileLoad = useCallback((fileData: ActiveFile) => {
     setActiveFile(fileData);
+  }, []);
+
+  const handleTextSelection = useCallback((text: string) => {
+    setSelectedText(text);
+  }, []);
+
+  const handleSetAppendFunction = useCallback((appendFn: (content: string) => void) => {
+    setAppendToEditor(() => appendFn);
   }, []);
 
   // Add event listeners for mouse events
@@ -82,7 +92,11 @@ export default function MainLayout() {
           className="border-r border-gray-300 dark:border-gray-700"
           style={{ width: `${100 - aiPanelWidth}%` }}
         >
-          <TextEditor activeFile={activeFile} />
+          <TextEditor
+            activeFile={activeFile}
+            onTextSelection={handleTextSelection}
+            onSetAppendFunction={handleSetAppendFunction}
+          />
         </div>
 
         {/* Resize Handle */}
@@ -102,7 +116,12 @@ export default function MainLayout() {
         <div
           style={{ width: `${aiPanelWidth}%`, minWidth: '250px' }}
         >
-          <AIAssistant />
+          <AIAssistant
+            activeProjectId={activeFile?.projectId}
+            activeFile={activeFile}
+            selectedText={selectedText}
+            appendToEditor={appendToEditor}
+          />
         </div>
       </div>
     </div>

@@ -1,0 +1,8 @@
+<context>
+Provide a helpful response that references the following files and content found from the user's project.
+{file_contents}
+</context>
+
+<user_input>
+User question: {user_message}
+</user_input>

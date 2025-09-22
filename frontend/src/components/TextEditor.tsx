@@ -1,5 +1,6 @@
 'use client';
 
+import { Selection } from '@tiptap/extensions';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useState, useEffect, useCallback } from 'react';
@@ -17,24 +18,35 @@ interface ActiveFile {
 
 interface TextEditorProps {
   activeFile: ActiveFile | null;
+  onTextSelection: (text: string) => void;
+  onSetAppendFunction?: (appendFn: (content: string) => void) => void;
 }
 
-export default function TextEditor({ activeFile }: TextEditorProps) {
+export default function TextEditor({ activeFile, onTextSelection, onSetAppendFunction }: TextEditorProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [Selection, StarterKit],
     content: activeFile ? marked(activeFile.content) : '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-8 dark:prose-invert',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-full h-full p-8 dark:prose-invert overflow-y-auto',
         'data-placeholder': 'Start writing...',
       },
     },
     immediatelyRender: false,
     onUpdate: () => {
       setHasUnsavedChanges(true);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      if (from !== to) {
+        const selectedText = editor.state.doc.textBetween(from, to);
+        onTextSelection(selectedText);
+      } else {
+        onTextSelection('');
+      }
     },
   });
 
@@ -47,6 +59,25 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
       setHasUnsavedChanges(false);
     }
   }, [activeFile, editor]);
+
+  // Expose append content functionality to parent
+  useEffect(() => {
+    if (onSetAppendFunction && editor) {
+      const appendFunction = (content: string) => {
+        // Convert markdown to HTML before inserting
+        const htmlContent = marked(content);
+        editor.commands.focus('end');
+        editor.commands.insertContent('<br>' + htmlContent);
+
+        // Scroll to the bottom after content is added
+        setTimeout(() => {
+          const editorElement = editor.view.dom;
+          editorElement.scrollTop = editorElement.scrollHeight;
+        }, 100);
+      };
+      onSetAppendFunction(appendFunction);
+    }
+  }, [editor, onSetAppendFunction]);
 
   const handleSave = useCallback(async (isAutoSave = false) => {
     if (!editor || !activeFile) return;
@@ -148,10 +179,10 @@ export default function TextEditor({ activeFile }: TextEditorProps) {
       </div>
 
       {/* Editor Area */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <EditorContent
           editor={editor}
-          className="h-full"
+          className="h-full overflow-y-auto"
         />
       </div>
     </div>

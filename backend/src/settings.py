@@ -12,9 +12,11 @@ class Settings(BaseSettings):
         default="data", description="Folder to store user projects and files"
     )
 
+    openai_api_key: str = Field(default="", description="OpenAI API key")
+    anthropic_api_key: str = Field(default="", description="Anthropic API key")
+
     @property
     def data_path(self) -> Path:
-        """Get the absolute path to the data folder"""
         if Path(self.data_folder).is_absolute():
             return Path(self.data_folder)
         else:

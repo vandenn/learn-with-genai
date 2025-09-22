@@ -1,0 +1,4 @@
+<input>
+Analyze the user's message and determine what type of response is needed.
+User message: "{user_message}"
+</input>

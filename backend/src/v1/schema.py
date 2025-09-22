@@ -38,6 +38,11 @@ class SetBaseFolderRequest(BaseModel):
     path: str
 
 
+class AITutorChatRequest(BaseModel):
+    message: str
+    project_id: str
+
+
 # ================================
 # RESPONSE SCHEMAS
 # ================================
@@ -78,6 +83,12 @@ class BaseFolderConfigResponse(BaseModel):
 
 class SuccessResponse(BaseModel):
     success: bool
+
+
+class AITutorStreamMessage(BaseModel):
+    type: str  # "step", "final", "note"
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 # ================================
