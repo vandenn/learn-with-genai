@@ -16,11 +16,12 @@ async def chat(request: AITutorChatRequest):
                     type=result["type"], content=result["content"]
                 )
                 yield f"data: {stream_msg.model_dump_json()}\n\n"
-        except Exception:
+        except Exception as e:
             error_msg = AITutorStreamMessage(
                 type="final",
                 content="I'm having trouble processing your question right now. Please try again!",
             )
+            print(f"Error: {e}")
             yield f"data: {error_msg.model_dump_json()}\n\n"
 
     return StreamingResponse(

@@ -15,5 +15,5 @@ Adhere to the following principles when formulating your answers:
 
 Keep responses conversational, helpful, and concise (1 paragraph max).
 
-IMPORTANT: When you provide substantial learning content, explanations, or insights that would be valuable to reference later, suggest that the user might want to add this information to their current note. Use phrasing like "Would you like me to add this explanation to your current note?" or "Should I append this summary to your notes?" This helps users build comprehensive learning materials.
+IMPORTANT: When you provide substantial learning content, explanations, or insights that would be valuable to reference later, suggest that the user might want to add this information to their current note. Use phrasing like "Would you like me to add this explanation to your current note?" or "Should I append this summary to your note?" This helps users build comprehensive learning materials.
 </instructions>

@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, TypedDict, Union
 
 from langchain_anthropic import ChatAnthropic
@@ -96,24 +97,28 @@ def analyze_query(state: WorkflowState) -> WorkflowState:
 
     response = llm.invoke(messages).content.strip()
 
-    if response.startswith("SEARCH"):
-        state["query_type"] = "SEARCH"
-        parts = response.split("SEARCH", 1)
-        if len(parts) > 1:
-            state["search_query"] = parts[1].strip()
-        else:
-            state["search_query"] = state["user_message"]
+    analysis = json.loads(response)
+    query_type = analysis.get("query_type", "GENERAL")
+    state["query_type"] = query_type
+
+    if query_type == "SEARCH":
+        state["search_query"] = state[
+            "user_message"
+        ]  # Set user message as query by default
+        if "keywords" in analysis:
+            state["search_query"] = ",".join(analysis["keywords"])
         state["step_messages"].append(
             "I need to search through your project files to answer that question."
         )
-    elif response.startswith("ADD_TO_NOTE"):
-        state["query_type"] = "ADD_TO_NOTE"
-        state["step_messages"].append("I'll add the previous discussion to your note.")
+    elif query_type == "ADD_TO_NOTE":
+        state["step_messages"].append("I'll add the information to your note.")
     else:
-        state["query_type"] = "GENERAL"
         state["step_messages"].append("I'll answer this based on my knowledge.")
 
     return state
+
+
+TOP_K_FILES = 5
 
 
 def search_files(state: WorkflowState) -> WorkflowState:
@@ -126,7 +131,7 @@ def search_files(state: WorkflowState) -> WorkflowState:
         project = get_single_project(state["current_project_id"])
 
         found_files = []
-        search_terms = state["search_query"].lower().split()
+        search_terms = state["search_query"].lower().split(",")
 
         # Simple keyword search
         # TODO: Replace with more sophisticated search
@@ -143,7 +148,7 @@ def search_files(state: WorkflowState) -> WorkflowState:
                             "project": project.name,
                             "file": file_name,
                             "path": file_content.path,
-                            "content": file_content.content[:500],
+                            "content": file_content.content,
                             "relevance": matches,
                         }
                     )
@@ -151,7 +156,7 @@ def search_files(state: WorkflowState) -> WorkflowState:
                 continue
 
         found_files.sort(key=lambda x: x["relevance"], reverse=True)
-        state["found_files"] = found_files[:5]
+        state["found_files"] = found_files[:TOP_K_FILES]
 
         if found_files:
             file_count = len(found_files)
@@ -187,15 +192,15 @@ def generate_response(state: WorkflowState) -> WorkflowState:
     llm = get_llm(is_mini=False)
 
     if state["file_contents"]:
-        context_template = load_prompt("context_response")
+        context_template = load_prompt("context_response_user")
         context_prompt = context_template.format(
             user_message=state["user_message"], file_contents=state["file_contents"]
         )
     else:
-        general_template = load_prompt("general_response")
+        general_template = load_prompt("general_response_user")
         context_prompt = general_template.format(user_message=state["user_message"])
 
-    system_prompt = load_prompt("system_prompt")
+    system_prompt = load_prompt("response_generation_system")
 
     messages = [
         SystemMessage(content=system_prompt),
@@ -211,16 +216,8 @@ def generate_response(state: WorkflowState) -> WorkflowState:
 def generate_note(state: WorkflowState) -> WorkflowState:
     llm = get_llm(is_mini=False)
 
-    conversation_content = ""
-    if "--- PREVIOUS CONVERSATION ---" in state["user_message"]:
-        parts = state["user_message"].split("--- PREVIOUS CONVERSATION ---")
-        if len(parts) > 1:
-            conversation_content = (
-                parts[1].split("--- ACTIVE FILE CONTEXT ---")[0].strip()
-            )
-
     note_template = load_prompt("note_generation_user")
-    note_prompt = note_template.format(conversation_content=conversation_content)
+    note_prompt = note_template.format(conversation_content=state["user_message"])
 
     note_system = load_prompt("note_generation_system")
 
