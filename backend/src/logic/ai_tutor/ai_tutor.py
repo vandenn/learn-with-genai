@@ -1,14 +1,13 @@
 import json
-from typing import Any, Dict, List, TypedDict, Union
+from typing import Any, Dict, List, TypedDict
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 
-from src.logic.projects_manager import get_single_project, open_file
 from src.prompts.helpers import load_prompt
-from src.settings import settings
+
+from .search import search_files
+from .utils import get_llm
 
 
 class WorkflowState(TypedDict):
@@ -118,76 +117,6 @@ def analyze_query(state: WorkflowState) -> WorkflowState:
     return state
 
 
-TOP_K_FILES = 5
-
-
-def search_files(state: WorkflowState) -> WorkflowState:
-    if state["query_type"] != "SEARCH":
-        return state
-
-    state["step_messages"].append(f"Searching for: {state['search_query']}")
-
-    try:
-        project = get_single_project(state["current_project_id"])
-
-        found_files = []
-        search_terms = state["search_query"].lower().split(",")
-
-        # Simple keyword search
-        # TODO: Replace with more sophisticated search
-        for file_name in project.file_names:
-            try:
-                file_content = open_file(f"{project.path}/{file_name}.md")
-                content_lower = file_content.content.lower()
-
-                matches = sum(1 for term in search_terms if term in content_lower)
-
-                if matches > 0:
-                    found_files.append(
-                        {
-                            "project": project.name,
-                            "file": file_name,
-                            "path": file_content.path,
-                            "content": file_content.content,
-                            "relevance": matches,
-                        }
-                    )
-            except Exception:
-                continue
-
-        found_files.sort(key=lambda x: x["relevance"], reverse=True)
-        state["found_files"] = found_files[:TOP_K_FILES]
-
-        if found_files:
-            file_count = len(found_files)
-            state["step_messages"].append(
-                f"Found {file_count} relevant file(s). Analyzing the content..."
-            )
-
-            contents = []
-            for file_info in state["found_files"]:
-                contents.append(
-                    f"File: {file_info['file']}\nContent: {file_info['content']}\n---"
-                )
-            state["file_contents"] = "\n".join(contents)
-        else:
-            state["step_messages"].append("No relevant files found in your project.")
-            state["file_contents"] = ""
-
-    except ValueError:
-        state["step_messages"].append(
-            f"Project not found: {state['current_project_id']}"
-        )
-        state["file_contents"] = ""
-    except Exception:
-        state["step_messages"].append(
-            "Had trouble searching files, but I'll do my best to help."
-        )
-        state["file_contents"] = ""
-
-    return state
-
-
 def generate_response(state: WorkflowState) -> WorkflowState:
     llm = get_llm(is_mini=False)
 
@@ -237,23 +166,3 @@ def route_next_step(state: WorkflowState) -> str:
         return "search_files"
     else:
         return "generate_response"
-
-
-def get_llm(is_mini: bool = True) -> Union[ChatOpenAI, ChatAnthropic]:
-    if settings.anthropic_api_key:
-        model = "claude-3-5-haiku-20241022" if is_mini else "claude-3-5-sonnet-20241022"
-        return ChatAnthropic(
-            model=model,
-            api_key=settings.anthropic_api_key,
-            temperature=0.7,
-        )
-    elif settings.openai_api_key:
-        model = "gpt-4o-mini" if is_mini else "gpt-4o"
-        return ChatOpenAI(
-            model=model,
-            api_key=settings.openai_api_key,
-            temperature=0.7,
-        )
-    raise ValueError(
-        "No API key provided. Please set at least one LLM provider's API key in your environment."
-    )
