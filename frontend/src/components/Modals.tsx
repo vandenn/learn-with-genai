@@ -13,7 +13,7 @@ interface ConfirmModalProps {
   type?: 'danger' | 'default';
 }
 
-interface PromptModalProps {
+interface TextInputModalProps {
   isOpen: boolean;
   title: string;
   message: string;
@@ -71,7 +71,7 @@ export function ConfirmModal({
   );
 }
 
-export function PromptModal({
+export function TextInputModal({
   isOpen,
   title,
   message,
@@ -81,7 +81,7 @@ export function PromptModal({
   onCancel,
   confirmText = 'OK',
   cancelText = 'Cancel'
-}: PromptModalProps) {
+}: TextInputModalProps) {
   const [value, setValue] = useState(defaultValue);
 
   useEffect(() => {

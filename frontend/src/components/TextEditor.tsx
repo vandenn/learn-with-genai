@@ -1,29 +1,30 @@
 'use client';
 
+import React, { useRef, useImperativeHandle, useState, useEffect, useCallback, forwardRef } from 'react';
 import { Selection } from '@tiptap/extensions';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
+import { File } from '../types';
 
 const AUTO_SAVE_INTERVAL_MS = 3000;
 const WELCOME_CONTENT = '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>';
 
-interface ActiveFile {
-  name: string;
-  path: string;
-  content: string;
-  projectId: string;
+export interface TextEditorRef {
+  appendContent: (content: string) => void;
+  insertAtCursor: (content: string) => void;
 }
 
 interface TextEditorProps {
-  activeFile: ActiveFile | null;
+  activeProjectId: string | null;
+  activeFileName: string | null;
   onTextSelection: (text: string) => void;
-  onSetAppendFunction?: (appendFn: (content: string) => void) => void;
+  ref?: React.Ref<TextEditorRef>;
 }
 
-export default function TextEditor({ activeFile, onTextSelection, onSetAppendFunction }: TextEditorProps) {
+export default function TextEditor({ activeProjectId, activeFileName, onTextSelection, ref }: TextEditorProps) {
+  const [activeFile, setActiveFile] = useState<File | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
 
@@ -36,7 +37,6 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
         'data-placeholder': 'Start writing...',
       },
     },
-    immediatelyRender: false,
     onUpdate: () => {
       setHasUnsavedChanges(true);
     },
@@ -49,45 +49,73 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
         onTextSelection('');
       }
     },
+    immediatelyRender: false,
   });
+
+  useImperativeHandle(ref, () => {
+    return {
+      appendContent(content: string) {
+        if (!editor) return;
+        const htmlContent = marked(content);
+        editor.commands.focus('end');
+        editor.commands.insertContent(htmlContent);
+
+        // Scroll to bottom after content is added
+        setTimeout(() => {
+          const editorElement = editor.view.dom;
+          editorElement.scrollTop = editorElement.scrollHeight;
+        }, 100);
+      },
+
+      insertAtCursor(content: string) {
+        if (!editor) return;
+        const htmlContent = marked(content);
+        editor.commands.insertContent(htmlContent);
+      }
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    const fetchFileData = async () => {
+      if (!activeProjectId || !activeFileName) {
+        setActiveFile(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`);
+        if (response.ok) {
+          const fileData = await response.json();
+          setActiveFile(fileData);
+        } else {
+          console.error('Failed to fetch file data:', response.statusText);
+          setActiveFile(null);
+        }
+      } catch (err) {
+        console.error('Error fetching file data:', err);
+        setActiveFile(null);
+      }
+    };
+
+    fetchFileData();
+  }, [activeProjectId, activeFileName]);
 
   // Update editor content when activeFile changes
   useEffect(() => {
     if (editor) {
       if (activeFile) {
-        // Convert markdown to HTML before setting content
         const htmlContent = marked(activeFile.content);
         editor.commands.setContent(htmlContent);
         setHasUnsavedChanges(false);
       } else {
-        // Clear content when no file is active
         editor.commands.setContent(WELCOME_CONTENT);
         setHasUnsavedChanges(false);
       }
     }
   }, [activeFile, editor]);
 
-  // Expose append content functionality to parent
-  useEffect(() => {
-    if (onSetAppendFunction && editor) {
-      const appendFunction = (content: string) => {
-        // Convert markdown to HTML before inserting
-        const htmlContent = marked(content);
-        editor.commands.focus('end');
-        editor.commands.insertContent('<br>' + htmlContent);
-
-        // Scroll to the bottom after content is added
-        setTimeout(() => {
-          const editorElement = editor.view.dom;
-          editorElement.scrollTop = editorElement.scrollHeight;
-        }, 100);
-      };
-      onSetAppendFunction(appendFunction);
-    }
-  }, [editor, onSetAppendFunction]);
-
   const handleSave = useCallback(async (isAutoSave = false) => {
-    if (!editor || !activeFile) return;
+    if (!editor || !activeProjectId || !activeFileName) return;
 
     try {
       if (isAutoSave) {
@@ -95,15 +123,13 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
       }
 
       const htmlContent = editor.getHTML();
-
-      // Convert HTML back to markdown before saving
       const turndownService = new TurndownService({
         headingStyle: 'atx',
         bulletListMarker: '-'
       });
       const markdownContent = turndownService.turndown(htmlContent);
 
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${activeFile.projectId}/files/${activeFile.name}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +155,7 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
         setIsAutoSaving(false);
       }
     }
-  }, [editor, activeFile]);
+  }, [editor, activeProjectId, activeFileName]);
 
   // Auto-save timer
   useEffect(() => {
@@ -142,7 +168,7 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
     return () => clearInterval(autoSaveInterval);
   }, [hasUnsavedChanges, isAutoSaving, handleSave]);
 
-  // Add keyboard shortcut for saving
+  // Keyboard shortcut for saving
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -157,15 +183,15 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
 
   return (
     <div className="h-full flex flex-col bg-gray-200 dark:bg-gray-950">
-      {/* Header with file info */}
+      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">📄</span>
             <span className="font-medium text-gray-800 dark:text-gray-200">
-              {activeFile ? `${activeFile.name}.md` : 'No file selected'}
+              {activeFileName ? `${activeFileName}.md` : 'No file selected'}
             </span>
-            {activeFile && (
+            {activeFileName && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 • {isAutoSaving ? 'Auto-saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
               </span>
@@ -174,9 +200,9 @@ export default function TextEditor({ activeFile, onTextSelection, onSetAppendFun
           <div className="flex items-center space-x-2">
             <button
               onClick={() => handleSave()}
-              disabled={!activeFile || !hasUnsavedChanges}
+              disabled={!activeFileName || !hasUnsavedChanges}
               className={`px-3 py-1 text-xs rounded ${
-                activeFile && hasUnsavedChanges
+                activeFileName && hasUnsavedChanges
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}

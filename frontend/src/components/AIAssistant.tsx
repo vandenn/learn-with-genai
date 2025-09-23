@@ -1,41 +1,56 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-
-interface Message {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
-
-
-interface ActiveFile {
-  name: string;
-  path: string;
-  content: string;
-  projectId: string;
-}
+import { useState, useEffect } from 'react';
+import MessageList from './ai/MessageList';
+import MessageInput from './ai/MessageInput';
+import ThinkingIndicator from './ai/ThinkingIndicator';
+import { Message, File } from '../types';
+import { TextEditorRef } from './TextEditor';
 
 interface AIAssistantProps {
-  activeProjectId?: string;
-  activeFile: ActiveFile | null;
+  activeProjectId?: string | null;
+  activeFileName: string | null;
   selectedText: string;
-  appendToEditor: ((content: string) => void) | null;
+  textEditorRef: React.RefObject<TextEditorRef | null>;
 }
 
-export default function AIAssistant({ activeProjectId, activeFile, selectedText, appendToEditor }: AIAssistantProps) {
+export default function AIAssistant({ activeProjectId, activeFileName, selectedText, textEditorRef }: AIAssistantProps) {
+  const [activeFile, setActiveFile] = useState<File | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const appendToActiveFile = (content: string) => {
-    if (!appendToEditor) return;
+  useEffect(() => {
+    const fetchFileData = async () => {
+      if (!activeProjectId || !activeFileName) {
+        setActiveFile(null);
+        return;
+      }
 
-    appendToEditor(content);
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`);
+        if (response.ok) {
+          const fileData = await response.json();
+          setActiveFile(fileData);
+        } else {
+          console.error('Failed to fetch file data:', response.statusText);
+          setActiveFile(null);
+        }
+      } catch (err) {
+        console.error('Error fetching file data:', err);
+        setActiveFile(null);
+      }
+    };
+
+    fetchFileData();
+  }, [activeProjectId, activeFileName]);
+
+  const appendToFile = (content: string) => {
+    if (!textEditorRef.current) return;
+
+    textEditorRef.current.appendContent(content);
 
     // Show success message
+    // TODO: Delegate this back to backend once note is done sending
     const successMessage: Message = {
       id: `${Date.now()}-success`,
       type: 'assistant',
@@ -45,12 +60,8 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
     setMessages(prev => [...prev, successMessage]);
   };
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isThinking]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (inputText: string) => {
     if (!inputText.trim() || !activeProjectId) return;
 
     // Build context-enhanced message
@@ -90,7 +101,6 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
 
     const currentInput = enhancedMessage; // Send the context-enhanced message to backend
     setMessages(prev => [...prev, userMessage]);
-    setInputText('');
     setIsThinking(true);
 
     try {
@@ -132,7 +142,7 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
 
                   if (data.type === 'note') {
                     // Handle note content by appending to active file
-                    appendToActiveFile(data.content);
+                    appendToFile(data.content);
                     setIsThinking(false);
                   } else {
                     // Handle regular messages (step, final)
@@ -176,12 +186,6 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
     }
   };
 
-  const handleKeyUp = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 border-l border-gray-300 dark:border-gray-700">
@@ -193,84 +197,17 @@ export default function AIAssistant({ activeProjectId, activeFile, selectedText,
         </h2>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[85%] rounded-lg p-3 ${
-                message.type === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
-              }`}
-            >
-              <div className="text-sm whitespace-pre-wrap">
-                {message.content}
-              </div>
-              <div
-                className={`text-xs mt-1 ${
-                  message.type === 'user'
-                    ? 'text-blue-100'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-          </div>
-        ))}
-        {/* Invisible div to scroll to */}
-        <div ref={messagesEndRef} />
-      </div>
+      <MessageList messages={messages} isThinking={isThinking} />
 
-      {/* Input Area */}
       <div className="border-t border-gray-300 dark:border-gray-700">
-        {/* Thinking Status Bar */}
-        {isThinking && (
-          <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-300 dark:border-gray-700">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-blue-600 dark:text-blue-300">Thinking...</span>
-            </div>
-          </div>
-        )}
-
-        <div className="px-3 pt-1 pb-3">
-          {/* Context Status */}
-          {activeFile && (
-            <div className="mb-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Context: {activeFile.name}
-                {selectedText.trim() && (
-                  <span className="text-blue-500 dark:text-blue-400"> (+ highlighted text)</span>
-                )}
-              </span>
-            </div>
-          )}
-          <div className="flex space-x-2">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyUp={handleKeyUp}
-              placeholder={activeProjectId ? "What do you want to learn about?" : "Select a project to start chatting"}
-              disabled={isThinking || !activeProjectId}
-              className={`flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 ${
-                (isThinking || !activeProjectId) ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              rows={2}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputText.trim() || isThinking || !activeProjectId}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              <span className="text-sm">Send</span>
-            </button>
-          </div>
-        </div>
+        <ThinkingIndicator isVisible={isThinking} />
+        <MessageInput
+          activeProjectId={activeProjectId}
+          activeFileName={activeFileName}
+          selectedText={selectedText}
+          isThinking={isThinking}
+          onSendMessage={handleSendMessage}
+        />
       </div>
     </div>
   );
