@@ -44,4 +44,11 @@ make init
 make run
 ```
 
+## Development
+
+To activate pre-commits, make sure to run the following in the root directory:
+```bash
+make setup-dev
+```
+
 The backend server will be available at 'http://localhost:8000'.
