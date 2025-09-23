@@ -1,0 +1,22 @@
+from langchain_core.messages import HumanMessage, SystemMessage
+
+from src.logic.ai_tutor.state.tutor_state import TutorState
+from src.logic.ai_tutor.utils import get_llm
+from src.prompts.helpers import load_prompt
+
+
+def generate_note_content(state: TutorState) -> TutorState:
+    llm = get_llm(is_mini=False)
+
+    note_template = load_prompt("note_generation_user")
+    note_prompt = note_template.format(conversation_content=state["user_message"])
+
+    note_system = load_prompt("note_generation_system")
+
+    messages = [SystemMessage(content=note_system), HumanMessage(content=note_prompt)]
+
+    response = llm.invoke(messages).content
+    state["note_content"] = response
+    state["final_response"] = "✅ Content has been added to your note!"
+
+    return state
