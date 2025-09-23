@@ -7,11 +7,13 @@ import AIAssistant from "./AIAssistant";
 import ResizeHandle from "./ui/ResizeHandle";
 
 export default function MainLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [aiPanelWidthPercent, setAiPanelWidthPercent] = useState(30);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeFileName, setActiveFileName] = useState<string | null>(null);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [aiPanelWidthPercent, setAiPanelWidthPercent] = useState(30);
   const [selectedText, setSelectedText] = useState<string>("");
+
   const containerRef = useRef<HTMLDivElement>(null);
   const textEditorRef = useRef<TextEditorRef>(null);
 

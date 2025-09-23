@@ -140,8 +140,9 @@ export default function Sidebar({
       defaultValue: "",
       onConfirm: async (name: string) => {
         try {
-          await apiPost("/projects", { name });
+          const newProject = await apiPost<Project>("/projects", { name });
           await loadProjects();
+          await handleProjectSelect(newProject.id);
           setTextInputModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
           console.error("Error creating project:", err);
