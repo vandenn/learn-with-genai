@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Project } from '../../types';
-import IconButton from '../ui/IconButton';
+import { Project } from "../../types";
+import IconButton from "../ui/IconButton";
 
 interface ProjectListProps {
   projects: Project[];
@@ -25,8 +25,8 @@ export default function ProjectList({
           key={project.id}
           className={`border rounded-lg p-3 cursor-pointer group transition-colors ${
             activeProjectId === project.id
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : 'border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+              : "border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
           }`}
           onClick={() => onProjectSelect(project.id)}
         >

@@ -25,9 +25,7 @@ export interface Config {
 
 export interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   content: string;
   timestamp: Date;
 }
-
-

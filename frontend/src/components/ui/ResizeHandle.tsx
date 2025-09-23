@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from "react";
 
 interface ResizeHandleProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -13,24 +13,37 @@ export default function ResizeHandle({
   containerRef,
   onWidthPercentChange,
   minWidthPercent = 20,
-  maxWidthPercent = 60
+  maxWidthPercent = 60,
 }: ResizeHandleProps) {
   const [isResizing, setIsResizing] = useState(false);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing || !containerRef.current) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const containerWidth = containerRect.width;
-    const mouseX = e.clientX - containerRect.left;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const mouseX = e.clientX - containerRect.left;
 
-    // Calculate percentage from the right edge
-    const newWidthPercent = ((containerWidth - mouseX) / containerWidth) * 100;
+      // Calculate percentage from the right edge
+      const newWidthPercent =
+        ((containerWidth - mouseX) / containerWidth) * 100;
 
-    // Constrain between min and max
-    const constrainedWidthPercent = Math.min(Math.max(newWidthPercent, minWidthPercent), maxWidthPercent);
-    onWidthPercentChange(constrainedWidthPercent);
-  }, [isResizing, containerRef, onWidthPercentChange, minWidthPercent, maxWidthPercent]);
+      // Constrain between min and max
+      const constrainedWidthPercent = Math.min(
+        Math.max(newWidthPercent, minWidthPercent),
+        maxWidthPercent,
+      );
+      onWidthPercentChange(constrainedWidthPercent);
+    },
+    [
+      isResizing,
+      containerRef,
+      onWidthPercentChange,
+      minWidthPercent,
+      maxWidthPercent,
+    ],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
@@ -44,16 +57,16 @@ export default function ResizeHandle({
   // Add event listeners for mouse events
   useEffect(() => {
     if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
 
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
       };
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
@@ -61,7 +74,7 @@ export default function ResizeHandle({
   return (
     <div
       className={`w-1 bg-gray-300 dark:bg-gray-700 hover:bg-blue-500 dark:hover:bg-blue-500 cursor-col-resize transition-colors relative ${
-        isResizing ? 'bg-blue-500' : ''
+        isResizing ? "bg-blue-500" : ""
       }`}
       onMouseDown={handleMouseDown}
     >

@@ -1,25 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import Sidebar from './Sidebar';
-import TextEditor, { TextEditorRef } from './TextEditor';
-import AIAssistant from './AIAssistant';
-import ResizeHandle from './ui/ResizeHandle';
-
+import React, { useState, useRef, useEffect } from "react";
+import Sidebar from "./Sidebar";
+import TextEditor, { TextEditorRef } from "./TextEditor";
+import AIAssistant from "./AIAssistant";
+import ResizeHandle from "./ui/ResizeHandle";
 
 export default function MainLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aiPanelWidthPercent, setAiPanelWidthPercent] = useState(30);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeFileName, setActiveFileName] = useState<string | null>(null);
-  const [selectedText, setSelectedText] = useState<string>('');
+  const [selectedText, setSelectedText] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const textEditorRef = useRef<TextEditorRef>(null);
 
   useEffect(() => {
     const loadInitialConfig = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/config');
+        const response = await fetch("http://localhost:8000/api/v1/config");
         if (response.ok) {
           const config = await response.json();
 
@@ -28,14 +27,17 @@ export default function MainLayout() {
           }
 
           if (config.active_file_path) {
-            const fileName = config.active_file_path.split('/').pop()?.replace('.md', '');
+            const fileName = config.active_file_path
+              .split("/")
+              .pop()
+              ?.replace(".md", "");
             if (fileName) {
               setActiveFileName(fileName);
             }
           }
         }
       } catch (err) {
-        console.error('Error loading initial config:', err);
+        console.error("Error loading initial config:", err);
       }
     };
 
@@ -44,7 +46,9 @@ export default function MainLayout() {
 
   return (
     <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
-      <div className={`${sidebarCollapsed ? 'w-12' : 'w-64'} transition-all duration-300 ease-in-out`}>
+      <div
+        className={`${sidebarCollapsed ? "w-12" : "w-64"} transition-all duration-300 ease-in-out`}
+      >
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -67,10 +71,11 @@ export default function MainLayout() {
             onTextSelection={setSelectedText}
           />
         </div>
-        <ResizeHandle containerRef={containerRef} onWidthPercentChange={setAiPanelWidthPercent} />
-        <div
-          style={{ width: `${aiPanelWidthPercent}%`, minWidth: '250px' }}
-        >
+        <ResizeHandle
+          containerRef={containerRef}
+          onWidthPercentChange={setAiPanelWidthPercent}
+        />
+        <div style={{ width: `${aiPanelWidthPercent}%`, minWidth: "250px" }}>
           <AIAssistant
             activeProjectId={activeProjectId}
             activeFileName={activeFileName}
@@ -82,4 +87,3 @@ export default function MainLayout() {
     </div>
   );
 }
-
