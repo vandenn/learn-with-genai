@@ -5,7 +5,9 @@
 ![python](https://img.shields.io/badge/python-3.11-blue)
 ![node](https://img.shields.io/badge/node.js-20+-green)
 
-"Cursor for learning" -- A GenAI-powered learning application that helps you learn faster through AI-powered note-taking, question answering, and pedagogical agents for reviewing.
+<img width="955" height="477" alt="learn_with_genai" src="https://github.com/user-attachments/assets/638e6778-74a2-4b32-b35f-11e79a339f0f" />
+
+"Cursor for learning" -- A GenAI-powered learning application that helps you learn faster through AI-powered note-taking, RAG-based question answering, and pedagogical agents for reviewing. Inspired by NotebookLM, Cursor, and Obsidian.
 
 </div>
 
