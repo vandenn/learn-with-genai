@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ConfirmModal, TextInputModal } from './Modals';
-import ProjectList from './sidebar/ProjectList';
-import FileList from './sidebar/FileList';
-import Button from './ui/Button';
-import LoadingSpinner from './ui/LoadingSpinner';
-import { Project } from '../types';
-import { apiGet, apiPost, apiPut, apiDelete, ApiError } from '../utils/api';
+import { useState, useEffect } from "react";
+import { ConfirmModal, TextInputModal } from "./Modals";
+import ProjectList from "./sidebar/ProjectList";
+import FileList from "./sidebar/FileList";
+import Button from "./ui/Button";
+import LoadingSpinner from "./ui/LoadingSpinner";
+import { Project } from "../types";
+import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "../utils/api";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -18,7 +18,14 @@ interface SidebarProps {
   onFileSelect: (fileName: string | null) => void;
 }
 
-export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFileName, onProjectSelect, onFileSelect }: SidebarProps) {
+export default function Sidebar({
+  collapsed,
+  onToggle,
+  activeProjectId,
+  activeFileName,
+  onProjectSelect,
+  onFileSelect,
+}: SidebarProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,11 +36,11 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
     title: string;
     message: string;
     onConfirm: () => void;
-    confirmType?: 'danger' | 'default';
+    confirmType?: "danger" | "default";
   }>({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: () => {},
   });
 
@@ -46,10 +53,10 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
     onConfirm: (value: string) => void;
   }>({
     isOpen: false,
-    title: '',
-    message: '',
-    placeholder: '',
-    defaultValue: '',
+    title: "",
+    message: "",
+    placeholder: "",
+    defaultValue: "",
     onConfirm: () => {},
   });
 
@@ -62,17 +69,19 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
 
   const loadProjects = async () => {
     try {
-      const projectsData = await apiGet<Project[]>('/projects');
+      const projectsData = await apiGet<Project[]>("/projects");
       setProjects(projectsData);
     } catch (err) {
-      console.error('Error loading projects:', err);
+      console.error("Error loading projects:", err);
     }
   };
 
   const loadProjectContents = async (projectId: string) => {
     try {
       const project = await apiGet<Project>(`/projects/${projectId}`);
-      setProjects(prev => prev.map(p => p.id === projectId ? project : p));
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? project : p)),
+      );
 
       if (activeFileName && project.file_names.includes(activeFileName)) {
         onFileSelect(activeFileName);
@@ -83,21 +92,21 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
         onFileSelect(null);
       }
     } catch (err) {
-      console.error('Error loading project contents:', err);
+      console.error("Error loading project contents:", err);
     }
   };
 
   const setActiveFileAndLoad = async (projectId: string, fileName: string) => {
     try {
-      const project = projects.find(p => p.id === projectId);
+      const project = projects.find((p) => p.id === projectId);
       if (!project) return;
 
       const fullPath = `${project.path}/${fileName}.md`;
       // TODO: Revise this in the backend to only need to pass the file name rather than the file path
-      await apiPost('/config/active-file', { file_path: fullPath });
+      await apiPost("/config/active-file", { file_path: fullPath });
       onFileSelect(fileName);
     } catch (err) {
-      console.error('Error setting active file:', err);
+      console.error("Error setting active file:", err);
     }
   };
 
@@ -106,14 +115,14 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
     setError(null);
 
     try {
-      await apiPost('/config/active-project', { project_id: projectId });
+      await apiPost("/config/active-project", { project_id: projectId });
       onProjectSelect(projectId);
       onFileSelect(null); // Allow subsequent code to load the first file, but impt to clear prev active file first
       if (projectId) {
         await loadProjectContents(projectId);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'An error occurred');
+      setError(err instanceof ApiError ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -124,44 +133,42 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
     await setActiveFileAndLoad(activeProjectId, fileName);
   };
 
-
   const createProject = () => {
     setTextInputModal({
       isOpen: true,
-      title: 'Create New Project',
-      message: 'Enter a name for the new project:',
-      placeholder: 'Project name',
-      defaultValue: '',
+      title: "Create New Project",
+      message: "Enter a name for the new project:",
+      placeholder: "Project name",
+      defaultValue: "",
       onConfirm: async (name: string) => {
         try {
-          await apiPost('/projects', { name });
+          await apiPost("/projects", { name });
           await loadProjects();
-          setTextInputModal(prev => ({ ...prev, isOpen: false }));
+          setTextInputModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Error creating project:', err);
+          console.error("Error creating project:", err);
         }
       },
     });
   };
 
-
   const renameProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
+    const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
     setTextInputModal({
       isOpen: true,
-      title: 'Rename Project',
-      message: 'Enter a new name for the project:',
-      placeholder: 'Project name',
+      title: "Rename Project",
+      message: "Enter a new name for the project:",
+      placeholder: "Project name",
       defaultValue: project.name,
       onConfirm: async (newName: string) => {
         try {
           await apiPut(`/projects/${projectId}`, { new_name: newName });
           await loadProjects();
-          setTextInputModal(prev => ({ ...prev, isOpen: false }));
+          setTextInputModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Error renaming project:', err);
+          console.error("Error renaming project:", err);
         }
       },
     });
@@ -172,36 +179,38 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
 
     setTextInputModal({
       isOpen: true,
-      title: 'Rename File',
-      message: 'Enter a new name for the file:',
-      placeholder: 'File name',
+      title: "Rename File",
+      message: "Enter a new name for the file:",
+      placeholder: "File name",
       defaultValue: fileName,
       onConfirm: async (newName: string) => {
         try {
-          await apiPut(`/projects/${activeProjectId}/files/${fileName}`, { new_name: newName });
+          await apiPut(`/projects/${activeProjectId}/files/${fileName}`, {
+            new_name: newName,
+          });
 
           if (activeFileName === fileName) {
             await setActiveFileAndLoad(activeProjectId, newName);
           }
 
           await loadProjectContents(activeProjectId);
-          setTextInputModal(prev => ({ ...prev, isOpen: false }));
+          setTextInputModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Error renaming file:', err);
+          console.error("Error renaming file:", err);
         }
       },
     });
   };
 
   const deleteProject = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
+    const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
     setConfirmModal({
       isOpen: true,
-      title: 'Delete Project',
+      title: "Delete Project",
       message: `Are you sure you want to delete "${project.name}"? This action cannot be undone.`,
-      confirmType: 'danger',
+      confirmType: "danger",
       onConfirm: async () => {
         try {
           await apiDelete(`/projects/${projectId}`);
@@ -209,14 +218,14 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
           if (activeProjectId === projectId) {
             onProjectSelect(null);
             onFileSelect(null);
-            await apiPost('/config/active-project', { project_id: null });
-            await apiPost('/config/active-file', { file_path: null });
+            await apiPost("/config/active-project", { project_id: null });
+            await apiPost("/config/active-file", { file_path: null });
           }
 
           await loadProjects();
-          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Error deleting project:', err);
+          console.error("Error deleting project:", err);
         }
       },
     });
@@ -227,34 +236,34 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
 
     setConfirmModal({
       isOpen: true,
-      title: 'Delete File',
+      title: "Delete File",
       message: `Are you sure you want to delete "${fileName}.md"? This action cannot be undone.`,
-      confirmType: 'danger',
+      confirmType: "danger",
       onConfirm: async () => {
         try {
           await apiDelete(`/projects/${activeProjectId}/files/${fileName}`);
 
           if (activeFileName === fileName) {
-            const project = projects.find(p => p.id === activeProjectId);
-            const remainingFiles = project?.file_names.filter(f => f !== fileName) || [];
+            const project = projects.find((p) => p.id === activeProjectId);
+            const remainingFiles =
+              project?.file_names.filter((f) => f !== fileName) || [];
 
             if (remainingFiles.length > 0) {
               await setActiveFileAndLoad(activeProjectId, remainingFiles[0]);
             } else {
               onFileSelect(null);
-              await apiPost('/config/active-file', { file_path: null });
+              await apiPost("/config/active-file", { file_path: null });
             }
           }
 
           await loadProjectContents(activeProjectId);
-          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Error deleting file:', err);
+          console.error("Error deleting file:", err);
         }
       },
     });
   };
-
 
   if (collapsed) {
     return (
@@ -292,7 +301,9 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
         {loading && (
           <div className="p-4 flex items-center justify-center">
             <LoadingSpinner />
-            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading...</span>
+            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+              Loading...
+            </span>
           </div>
         )}
 
@@ -304,7 +315,9 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
 
         {!loading && !error && projects.length === 0 && (
           <div className="p-4 text-center">
-            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">No projects yet</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
+              No projects yet
+            </p>
             <Button onClick={createProject} size="sm">
               Create First Project
             </Button>
@@ -345,8 +358,8 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
                 </div>
 
                 {projects
-                  .filter(project => project.id === activeProjectId)
-                  .map(project => (
+                  .filter((project) => project.id === activeProjectId)
+                  .map((project) => (
                     <div key={project.id} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
@@ -357,17 +370,23 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
                           onClick={() => {
                             setTextInputModal({
                               isOpen: true,
-                              title: 'Create New File',
-                              message: 'Enter a name for the new file:',
-                              placeholder: 'File name',
-                              defaultValue: '',
+                              title: "Create New File",
+                              message: "Enter a name for the new file:",
+                              placeholder: "File name",
+                              defaultValue: "",
                               onConfirm: async (filename: string) => {
                                 try {
-                                  await apiPost(`/projects/${activeProjectId}/files`, { filename });
+                                  await apiPost(
+                                    `/projects/${activeProjectId}/files`,
+                                    { filename },
+                                  );
                                   await loadProjectContents(activeProjectId);
-                                  setTextInputModal(prev => ({ ...prev, isOpen: false }));
+                                  setTextInputModal((prev) => ({
+                                    ...prev,
+                                    isOpen: false,
+                                  }));
                                 } catch (err) {
-                                  console.error('Error creating file:', err);
+                                  console.error("Error creating file:", err);
                                 }
                               },
                             });
@@ -393,14 +412,13 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
         )}
       </div>
 
-
       {/* Modals */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
         type={confirmModal.confirmType}
         confirmText="Delete"
         cancelText="Cancel"
@@ -413,7 +431,9 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
         placeholder={textInputModal.placeholder}
         defaultValue={textInputModal.defaultValue}
         onConfirm={textInputModal.onConfirm}
-        onCancel={() => setTextInputModal(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() =>
+          setTextInputModal((prev) => ({ ...prev, isOpen: false }))
+        }
         confirmText="Create"
         cancelText="Cancel"
       />

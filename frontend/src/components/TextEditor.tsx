@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import React, { useImperativeHandle, useState, useEffect, useCallback } from 'react';
-import { Selection } from '@tiptap/extensions';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { marked } from 'marked';
-import TurndownService from 'turndown';
-import { File } from '../types';
+import React, {
+  useImperativeHandle,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { Selection } from "@tiptap/extensions";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { marked } from "marked";
+import TurndownService from "turndown";
+import { File } from "../types";
 
 const AUTO_SAVE_INTERVAL_MS = 3000;
-const WELCOME_CONTENT = '<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>';
+const WELCOME_CONTENT =
+  "<h1>Welcome</h1><p>Select a file from the sidebar to start editing.</p>";
 
 export interface TextEditorRef {
   appendContent: (content: string) => void;
@@ -23,7 +29,12 @@ interface TextEditorProps {
   ref?: React.Ref<TextEditorRef>;
 }
 
-export default function TextEditor({ activeProjectId, activeFileName, onTextSelection, ref }: TextEditorProps) {
+export default function TextEditor({
+  activeProjectId,
+  activeFileName,
+  onTextSelection,
+  ref,
+}: TextEditorProps) {
   const [activeFile, setActiveFile] = useState<File | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
@@ -33,8 +44,9 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
     content: activeFile ? marked(activeFile.content) : WELCOME_CONTENT,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-full h-full p-8 dark:prose-invert overflow-y-auto',
-        'data-placeholder': 'Start writing...',
+        class:
+          "prose prose-sm max-w-none focus:outline-none min-h-full h-full p-8 dark:prose-invert overflow-y-auto",
+        "data-placeholder": "Start writing...",
       },
     },
     onUpdate: () => {
@@ -46,7 +58,7 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
         const selectedText = editor.state.doc.textBetween(from, to);
         onTextSelection(selectedText);
       } else {
-        onTextSelection('');
+        onTextSelection("");
       }
     },
     immediatelyRender: false,
@@ -57,7 +69,7 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
       appendContent(content: string) {
         if (!editor) return;
         const htmlContent = marked(content);
-        editor.commands.focus('end');
+        editor.commands.focus("end");
         editor.commands.insertContent(htmlContent);
 
         // Scroll to bottom after content is added
@@ -71,7 +83,7 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
         if (!editor) return;
         const htmlContent = marked(content);
         editor.commands.insertContent(htmlContent);
-      }
+      },
     };
   }, [editor]);
 
@@ -83,16 +95,18 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
       }
 
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`);
+        const response = await fetch(
+          `http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`,
+        );
         if (response.ok) {
           const fileData = await response.json();
           setActiveFile(fileData);
         } else {
-          console.error('Failed to fetch file data:', response.statusText);
+          console.error("Failed to fetch file data:", response.statusText);
           setActiveFile(null);
         }
       } catch (err) {
-        console.error('Error fetching file data:', err);
+        console.error("Error fetching file data:", err);
         setActiveFile(null);
       }
     };
@@ -114,48 +128,54 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
     }
   }, [activeFile, editor]);
 
-  const handleSave = useCallback(async (isAutoSave = false) => {
-    if (!editor || !activeProjectId || !activeFileName) return;
+  const handleSave = useCallback(
+    async (isAutoSave = false) => {
+      if (!editor || !activeProjectId || !activeFileName) return;
 
-    try {
-      if (isAutoSave) {
-        setIsAutoSaving(true);
-      }
+      try {
+        if (isAutoSave) {
+          setIsAutoSaving(true);
+        }
 
-      const htmlContent = editor.getHTML();
-      const turndownService = new TurndownService({
-        headingStyle: 'atx',
-        bulletListMarker: '-'
-      });
-      const markdownContent = turndownService.turndown(htmlContent);
+        const htmlContent = editor.getHTML();
+        const turndownService = new TurndownService({
+          headingStyle: "atx",
+          bulletListMarker: "-",
+        });
+        const markdownContent = turndownService.turndown(htmlContent);
 
-      const response = await fetch(`http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: markdownContent }),
-      });
+        const response = await fetch(
+          `http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content: markdownContent }),
+          },
+        );
 
-      if (response.ok) {
-        setHasUnsavedChanges(false);
-      } else {
-        const errorText = await response.text();
+        if (response.ok) {
+          setHasUnsavedChanges(false);
+        } else {
+          const errorText = await response.text();
+          if (!isAutoSave) {
+            alert(`Failed to save file: ${errorText}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error saving file:", err);
         if (!isAutoSave) {
-          alert(`Failed to save file: ${errorText}`);
+          alert("Failed to save file");
+        }
+      } finally {
+        if (isAutoSave) {
+          setIsAutoSaving(false);
         }
       }
-    } catch (err) {
-      console.error('Error saving file:', err);
-      if (!isAutoSave) {
-        alert('Failed to save file');
-      }
-    } finally {
-      if (isAutoSave) {
-        setIsAutoSaving(false);
-      }
-    }
-  }, [editor, activeProjectId, activeFileName]);
+    },
+    [editor, activeProjectId, activeFileName],
+  );
 
   // Auto-save timer
   useEffect(() => {
@@ -171,14 +191,14 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
   // Keyboard shortcut for saving
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleSave]);
 
   return (
@@ -189,11 +209,16 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">📄</span>
             <span className="font-medium text-gray-800 dark:text-gray-200">
-              {activeFileName ? `${activeFileName}.md` : 'No file selected'}
+              {activeFileName ? `${activeFileName}.md` : "No file selected"}
             </span>
             {activeFileName && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                • {isAutoSaving ? 'Auto-saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'Saved'}
+                •{" "}
+                {isAutoSaving
+                  ? "Auto-saving..."
+                  : hasUnsavedChanges
+                    ? "Unsaved changes"
+                    : "Saved"}
               </span>
             )}
           </div>
@@ -203,8 +228,8 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
               disabled={!activeFileName || !hasUnsavedChanges}
               className={`px-3 py-1 text-xs rounded ${
                 activeFileName && hasUnsavedChanges
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               Save (Ctrl + S)
@@ -215,10 +240,7 @@ export default function TextEditor({ activeProjectId, activeFileName, onTextSele
 
       {/* Editor Area */}
       <div className="flex-1 overflow-hidden">
-        <EditorContent
-          editor={editor}
-          className="h-full overflow-y-auto"
-        />
+        <EditorContent editor={editor} className="h-full overflow-y-auto" />
       </div>
     </div>
   );

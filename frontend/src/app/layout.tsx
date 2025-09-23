@@ -3,7 +3,8 @@ import "../styles/globals.css";
 
 export const metadata: Metadata = {
   title: "Learn with GenAI",
-  description: "AI-powered learning platform with markdown notes and intelligent assistance",
+  description:
+    "AI-powered learning platform with markdown notes and intelligent assistance",
 };
 
 export default function RootLayout({
@@ -13,9 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

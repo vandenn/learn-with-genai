@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface ConfirmModalProps {
   onCancel: () => void;
   confirmText?: string;
   cancelText?: string;
-  type?: 'danger' | 'default';
+  type?: "danger" | "default";
 }
 
 interface TextInputModalProps {
@@ -31,15 +31,16 @@ export function ConfirmModal({
   message,
   onConfirm,
   onCancel,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  type = 'default'
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  type = "default",
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
-  const confirmButtonClass = type === 'danger'
-    ? 'bg-red-600 hover:bg-red-700 text-white'
-    : 'bg-blue-600 hover:bg-blue-700 text-white';
+  const confirmButtonClass =
+    type === "danger"
+      ? "bg-red-600 hover:bg-red-700 text-white"
+      : "bg-blue-600 hover:bg-blue-700 text-white";
 
   return (
     <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
@@ -48,9 +49,7 @@ export function ConfirmModal({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
             {title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {message}
-          </p>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">{message}</p>
           <div className="flex justify-end space-x-3">
             <button
               onClick={onCancel}
@@ -75,12 +74,12 @@ export function TextInputModal({
   isOpen,
   title,
   message,
-  placeholder = '',
-  defaultValue = '',
+  placeholder = "",
+  defaultValue = "",
   onConfirm,
   onCancel,
-  confirmText = 'OK',
-  cancelText = 'Cancel'
+  confirmText = "OK",
+  cancelText = "Cancel",
 }: TextInputModalProps) {
   const [value, setValue] = useState(defaultValue);
 
@@ -96,7 +95,7 @@ export function TextInputModal({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onCancel();
     }
   };
@@ -111,9 +110,7 @@ export function TextInputModal({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               {title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {message}
-            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">{message}</p>
             <input
               type="text"
               value={value}
