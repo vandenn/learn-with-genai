@@ -1,11 +1,10 @@
-from typing import Any, Dict
-
+from src.logic.ai_tutor.state.tutor_state import TutorState
 from src.logic.projects_manager import get_single_project, open_file
 
 TOP_K_FILES = 5
 
 
-def search_files(state: Dict[str, Any]) -> Dict[str, Any]:
+def search_notes(state: TutorState) -> TutorState:
     if state["query_type"] != "SEARCH":
         return state
 
@@ -24,6 +23,7 @@ def search_files(state: Dict[str, Any]) -> Dict[str, Any]:
                 file_content = open_file(f"{project.path}/{file_name}.md")
                 content_lower = file_content.content.lower()
 
+                # Count matches for each search term
                 matches = sum(1 for term in search_terms if term in content_lower)
 
                 if matches > 0:

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from src.logic.ai_tutor.ai_tutor import stream_ai_tutor_workflow
+from src.logic.ai_tutor.graphs.main import stream_ai_tutor_workflow
 from src.v1.schema import AITutorChatRequest, AITutorStreamMessage
 
 router = APIRouter(prefix="/ai-tutor", tags=["ai-tutor"])
