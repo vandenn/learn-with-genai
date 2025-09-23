@@ -31,12 +31,12 @@ def set_active_project(project_id: Optional[str]) -> bool:
 
 def get_active_file() -> Optional[str]:
     config = load_base_folder_config()
-    return config.active_file_path
+    return config.active_file_name
 
 
-def set_active_file(file_path: Optional[str]) -> None:
+def set_active_file(file_name: Optional[str]) -> None:
     config = load_base_folder_config()
-    config.active_file_path = file_path
+    config.active_file_name = file_name
     config.modified = datetime.now()
     save_base_folder_config(config)
 
@@ -49,7 +49,7 @@ def initialize_config_file() -> None:
     if not config_path.exists():
         config = BaseFolderConfig(
             active_project_id=None,
-            active_file_path=None,
+            active_file_name=None,
             user_settings={},
             created=datetime.now(),
             modified=datetime.now(),

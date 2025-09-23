@@ -26,14 +26,8 @@ export default function MainLayout() {
             setActiveProjectId(config.active_project_id);
           }
 
-          if (config.active_file_path) {
-            const fileName = config.active_file_path
-              .split("/")
-              .pop()
-              ?.replace(".md", "");
-            if (fileName) {
-              setActiveFileName(fileName);
-            }
+          if (config.active_file_name) {
+            setActiveFileName(config.active_file_name);
           }
         }
       } catch (err) {

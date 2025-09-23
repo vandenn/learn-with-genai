@@ -17,7 +17,7 @@ export interface Project {
 
 export interface Config {
   active_project_id: string | null;
-  active_file_path: string | null;
+  active_file_name: string | null;
   user_settings: Record<string, any>;
   created: string;
   modified: string;

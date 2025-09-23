@@ -69,7 +69,7 @@ async def delete_project(project_id: str):
 @router.post("/{project_id}/files", response_model=FileContentResponse)
 async def create_file(project_id: str, request: CreateFileRequest):
     try:
-        file_content = projects_manager.create_file(project_id, request.filename)
+        file_content = projects_manager.create_file(project_id, request.file_name)
         return file_content_to_response(file_content)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

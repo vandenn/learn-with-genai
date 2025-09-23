@@ -101,9 +101,7 @@ export default function Sidebar({
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
 
-      const fullPath = `${project.path}/${fileName}.md`;
-      // TODO: Revise this in the backend to only need to pass the file name rather than the file path
-      await apiPost("/config/active-file", { file_path: fullPath });
+      await apiPost("/config/active-file", { file_name: fileName });
       onFileSelect(fileName);
     } catch (err) {
       console.error("Error setting active file:", err);
@@ -219,7 +217,7 @@ export default function Sidebar({
             onProjectSelect(null);
             onFileSelect(null);
             await apiPost("/config/active-project", { project_id: null });
-            await apiPost("/config/active-file", { file_path: null });
+            await apiPost("/config/active-file", { file_name: null });
           }
 
           await loadProjects();
@@ -252,7 +250,7 @@ export default function Sidebar({
               await setActiveFileAndLoad(activeProjectId, remainingFiles[0]);
             } else {
               onFileSelect(null);
-              await apiPost("/config/active-file", { file_path: null });
+              await apiPost("/config/active-file", { file_name: null });
             }
           }
 
@@ -374,11 +372,11 @@ export default function Sidebar({
                               message: "Enter a name for the new file:",
                               placeholder: "File name",
                               defaultValue: "",
-                              onConfirm: async (filename: string) => {
+                              onConfirm: async (file_name: string) => {
                                 try {
                                   await apiPost(
                                     `/projects/${activeProjectId}/files`,
-                                    { filename },
+                                    { file_name },
                                   );
                                   await loadProjectContents(activeProjectId);
                                   setTextInputModal((prev) => ({

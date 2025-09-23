@@ -19,19 +19,15 @@ class SetActiveProjectRequest(BaseModel):
 
 
 class SetActiveFileRequest(BaseModel):
-    file_path: Optional[str]
+    file_name: Optional[str]
 
 
 class CreateFileRequest(BaseModel):
-    filename: str
+    file_name: str
 
 
 class SaveFileRequest(BaseModel):
     content: str
-
-
-class OpenFileRequest(BaseModel):
-    file_path: str
 
 
 class SetBaseFolderRequest(BaseModel):
@@ -78,12 +74,12 @@ class ActiveProjectResponse(BaseModel):
 
 
 class ActiveFileReponse(BaseModel):
-    file_path: Optional[str]
+    file_name: Optional[str]
 
 
 class BaseFolderConfigResponse(BaseModel):
     active_project_id: Optional[str] = None
-    active_file_path: Optional[str] = None
+    active_file_name: Optional[str] = None
     user_settings: Dict[str, Any] = Field(default_factory=dict)
     created: datetime
     modified: datetime
@@ -118,7 +114,7 @@ def project_to_response(project: Project) -> ProjectResponse:
 def config_to_response(config: BaseFolderConfig) -> BaseFolderConfigResponse:
     return BaseFolderConfigResponse(
         active_project_id=config.active_project_id,
-        active_file_path=config.active_file_path,
+        active_file_name=config.active_file_name,
         user_settings=config.user_settings,
         created=config.created,
         modified=config.modified,

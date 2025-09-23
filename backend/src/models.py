@@ -15,7 +15,7 @@ class Project(BaseModel):
 
 class BaseFolderConfig(BaseModel):
     active_project_id: Optional[str] = None
-    active_file_path: Optional[str] = None
+    active_file_name: Optional[str] = None
     user_settings: Dict[str, Any] = Field(default_factory=dict)
     created: datetime
     modified: datetime
