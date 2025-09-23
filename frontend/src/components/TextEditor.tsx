@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useImperativeHandle, useState, useEffect, useCallback, forwardRef } from 'react';
+import React, { useImperativeHandle, useState, useEffect, useCallback } from 'react';
 import { Selection } from '@tiptap/extensions';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
