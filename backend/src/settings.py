@@ -15,6 +15,17 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="", description="OpenAI API key")
     anthropic_api_key: str = Field(default="", description="Anthropic API key")
 
+    anthropic_main_model: str = Field(
+        default="claude-sonnet-4-20250514", description="Anthropic main model"
+    )
+    anthropic_lite_model: str = Field(
+        default="claude-3-5-haiku-20241022", description="Anthropic lite model"
+    )
+    openai_main_model: str = Field(default="gpt-4o", description="OpenAI main model")
+    openai_lite_model: str = Field(
+        default="gpt-4o-mini", description="OpenAI lite model"
+    )
+
     @property
     def data_path(self) -> Path:
         if Path(self.data_folder).is_absolute():

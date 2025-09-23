@@ -8,14 +8,16 @@ from src.settings import settings
 
 def get_llm(is_mini: bool = True) -> Union[ChatOpenAI, ChatAnthropic]:
     if settings.anthropic_api_key:
-        model = "claude-3-5-haiku-20241022" if is_mini else "claude-3-5-sonnet-20241022"
+        model = (
+            settings.anthropic_lite_model if is_mini else settings.anthropic_main_model
+        )
         return ChatAnthropic(
             model=model,
             api_key=settings.anthropic_api_key,
             temperature=0.7,
         )
     elif settings.openai_api_key:
-        model = "gpt-4o-mini" if is_mini else "gpt-4o"
+        model = settings.openai_lite_model if is_mini else settings.openai_main_model
         return ChatOpenAI(
             model=model,
             api_key=settings.openai_api_key,
