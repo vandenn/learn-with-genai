@@ -22,7 +22,7 @@ Navigate to the frontend module:
 cd frontend
 ```
 
-Navigate to the frontend directory and start the development server:
+Install dependencies and start the development server:
 ```bash
 npm install
 npm run dev
