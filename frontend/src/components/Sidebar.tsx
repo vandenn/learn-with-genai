@@ -55,18 +55,10 @@ export default function Sidebar({ collapsed, onToggle, activeProjectId, activeFi
 
   useEffect(() => {
     if (!initialized) {
-      loadInitialData();
+      loadProjects();
       setInitialized(true);
     }
   }, [initialized]);
-
-  const loadInitialData = async () => {
-    try {
-      await loadProjects();
-    } catch (err) {
-      console.error('Error loading initial data:', err);
-    }
-  };
 
   const loadProjects = async () => {
     try {
