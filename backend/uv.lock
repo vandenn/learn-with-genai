@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -596,6 +596,45 @@ wheels = [
 ]
 
 [[package]]
+name = "learn-with-genai"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "dotenv" },
+    { name = "fastapi" },
+    { name = "langchain" },
+    { name = "langchain-anthropic" },
+    { name = "langchain-openai" },
+    { name = "langgraph" },
+    { name = "pandas" },
+    { name = "pydantic-settings" },
+    { name = "streamlit" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "fastapi", specifier = ">=0.116.2" },
+    { name = "langchain", specifier = ">=0.3.27" },
+    { name = "langchain-anthropic", specifier = ">=0.3.20" },
+    { name = "langchain-openai", specifier = ">=0.3.33" },
+    { name = "langgraph", specifier = ">=0.6.7" },
+    { name = "pandas", specifier = ">=2.3.0" },
+    { name = "pydantic-settings", specifier = ">=2.9.1" },
+    { name = "streamlit", specifier = ">=1.47.1" },
+    { name = "uvicorn", specifier = ">=0.36.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.11.13" }]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -958,45 +997,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/2d/e082982aacc927fc2cab48e1e731bdb1643a1406acace8bed0900a61464e/pillow-11.3.0-pp311-pypy311_pp73-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:504b6f59505f08ae014f724b6207ff6222662aab5cc9542577fb084ed0676ac7", size = 5581505, upload-time = "2025-07-01T09:16:25.593Z" },
     { url = "https://files.pythonhosted.org/packages/34/e7/ae39f538fd6844e982063c3a5e4598b8ced43b9633baa3a85ef33af8c05c/pillow-11.3.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:c84d689db21a1c397d001aa08241044aa2069e7587b398c8cc63020390b1c1b8", size = 6984598, upload-time = "2025-07-01T09:16:27.732Z" },
 ]
-
-[[package]]
-name = "project-name-here"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "dotenv" },
-    { name = "fastapi" },
-    { name = "langchain" },
-    { name = "langchain-anthropic" },
-    { name = "langchain-openai" },
-    { name = "langgraph" },
-    { name = "pandas" },
-    { name = "pydantic-settings" },
-    { name = "streamlit" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "fastapi", specifier = ">=0.116.2" },
-    { name = "langchain", specifier = ">=0.3.27" },
-    { name = "langchain-anthropic", specifier = ">=0.3.20" },
-    { name = "langchain-openai", specifier = ">=0.3.33" },
-    { name = "langgraph", specifier = ">=0.6.7" },
-    { name = "pandas", specifier = ">=2.3.0" },
-    { name = "pydantic-settings", specifier = ">=2.9.1" },
-    { name = "streamlit", specifier = ">=1.47.1" },
-    { name = "uvicorn", specifier = ">=0.36.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.11.13" }]
 
 [[package]]
 name = "protobuf"
