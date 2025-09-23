@@ -55,16 +55,6 @@ export default function AIAssistant({
     if (!textEditorRef.current) return;
 
     textEditorRef.current.appendContent(content);
-
-    // Show success message
-    // TODO: Delegate this back to backend once note is done sending
-    const successMessage: Message = {
-      id: `${Date.now()}-success`,
-      type: "assistant",
-      content: "✅ Content has been added to your note!",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, successMessage]);
   };
 
   const handleSendMessage = async (inputText: string) => {
@@ -159,7 +149,6 @@ export default function AIAssistant({
                   if (data.type === "note") {
                     // Handle note content by appending to active file
                     appendToFile(data.content);
-                    setIsThinking(false);
                   } else {
                     // Handle regular messages (step, final)
                     const aiMessage: Message = {

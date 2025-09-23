@@ -47,10 +47,10 @@ def stream_ai_tutor_workflow(user_message: str, current_project_id: str):
                 for i in range(previous_step_count, current_step_count):
                     yield {"type": "step", "content": state["step_messages"][i]}
                 previous_step_count = current_step_count
-            if state["final_response"]:
-                yield {"type": "final", "content": state["final_response"]}
             if state["note_content"]:
                 yield {"type": "note", "content": state["note_content"]}
+            if state["final_response"]:
+                yield {"type": "final", "content": state["final_response"]}
 
 
 def create_workflow() -> StateGraph:
@@ -225,6 +225,7 @@ def generate_note(state: WorkflowState) -> WorkflowState:
 
     response = llm.invoke(messages).content
     state["note_content"] = response
+    state["final_response"] = "✅ Content has been added to your note!"
 
     return state
 
