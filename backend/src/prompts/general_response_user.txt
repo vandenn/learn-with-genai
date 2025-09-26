@@ -1,3 +1,9 @@
+<conversation_history>
+Conversation so far:
+{conversation_history}
+</conversation_history>
+
 <user_input>
 User question: {user_message}
+Highlighted text: {highlighted_text}
 </user_input>

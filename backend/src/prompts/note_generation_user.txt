@@ -1,5 +1,7 @@
 <context>
-Based on the previous conversation between the user and assistant, here is the previous conversation. 
+Here is the user message: {user_message}
+Here is what they have highlighted: {highlighted_text}
 
-{conversation_content}
+Here is the the conversation so far:
+{conversation_history}
 </context>

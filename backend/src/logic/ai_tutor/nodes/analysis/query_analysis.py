@@ -12,7 +12,9 @@ def analyze_user_query(state: TutorState) -> TutorState:
 
     query_analysis_template = load_prompt("query_analysis_user")
     query_analysis_prompt = query_analysis_template.format(
-        user_message=state["user_message"]
+        user_message=state["user_message"],
+        conversation_history=state["conversation_history"],
+        highlighted_text=state["highlighted_text"] or "None",
     )
 
     query_analysis_system = load_prompt("query_analysis_system")
