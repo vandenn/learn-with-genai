@@ -1,4 +1,9 @@
-<input>
-Analyze the user's message and determine what type of response is needed.
-User message: "{user_message}"
-</input>
+<conversation_history>
+Conversation so far:
+{conversation_history}
+</conversation_history>
+
+<user_input>
+User message: {user_message}
+Highlighted text: {highlighted_text}
+</user_input>

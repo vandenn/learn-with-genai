@@ -20,36 +20,8 @@ export default function AIAssistant({
   selectedText,
   textEditorRef,
 }: AIAssistantProps) {
-  const [activeFile, setActiveFile] = useState<File | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-
-  useEffect(() => {
-    const fetchFileData = async () => {
-      if (!activeProjectId || !activeFileName) {
-        setActiveFile(null);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `http://localhost:8000/api/v1/projects/${activeProjectId}/files/${activeFileName}`,
-        );
-        if (response.ok) {
-          const fileData = await response.json();
-          setActiveFile(fileData);
-        } else {
-          console.error("Failed to fetch file data:", response.statusText);
-          setActiveFile(null);
-        }
-      } catch (err) {
-        console.error("Error fetching file data:", err);
-        setActiveFile(null);
-      }
-    };
-
-    fetchFileData();
-  }, [activeProjectId, activeFileName]);
 
   const appendToFile = (content: string) => {
     if (!textEditorRef.current) return;
@@ -60,49 +32,33 @@ export default function AIAssistant({
   const handleSendMessage = async (inputText: string) => {
     if (!inputText.trim() || !activeProjectId) return;
 
-    // Build context-enhanced message
-    let enhancedMessage = inputText;
+    // Build conversation history from last 5 user-assistant interaction pairs
+    const conversationHistory = [];
+    const reversedMessages = [...messages].reverse();
+    let userInteractionCount = 0;
 
-    // Add previous conversation context
-    if (messages.length >= 2) {
-      // Find the last user message and all assistant responses after it
-      const lastUserMessageIndex = messages.findLastIndex(
-        (msg) => msg.type === "user",
-      );
-      if (
-        lastUserMessageIndex >= 0 &&
-        lastUserMessageIndex < messages.length - 1
-      ) {
-        const lastUserMessage = messages[lastUserMessageIndex];
-        const assistantResponses = messages
-          .slice(lastUserMessageIndex + 1)
-          .filter((msg) => msg.type === "assistant");
-
-        if (assistantResponses.length > 0) {
-          enhancedMessage += `\n\n--- PREVIOUS CONVERSATION ---\nUser: ${lastUserMessage.content}\n`;
-          assistantResponses.forEach((response) => {
-            enhancedMessage += `Assistant: ${response.content}\n`;
-          });
-        }
+    for (const message of reversedMessages) {
+      if (message.type === "user") {
+        userInteractionCount++;
+        if (userInteractionCount > 5) break;
       }
-    }
 
-    if (activeFile) {
-      enhancedMessage += `\n\n--- ACTIVE FILE CONTENT ---\nFile: ${activeFile.name}\nContent:\n${activeFile.content}`;
-
-      if (selectedText.trim()) {
-        enhancedMessage += `\n\n--- HIGHLIGHTED TEXT ---\n${selectedText}`;
-      }
+      conversationHistory.unshift({
+        role: message.type === "user" ? "user" : "assistant",
+        content: {
+          type: "output_text",
+          text: message.content,
+        },
+      });
     }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: "user",
-      content: inputText, // Show only the user's original input in the UI
+      content: inputText,
       timestamp: new Date(),
     };
 
-    const currentInput = enhancedMessage; // Send the context-enhanced message to backend
     setMessages((prev) => [...prev, userMessage]);
     setIsThinking(true);
 
@@ -115,8 +71,10 @@ export default function AIAssistant({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: currentInput,
+            message: inputText,
             project_id: activeProjectId,
+            conversation_history: conversationHistory,
+            highlighted_text: selectedText.trim() || null,
           }),
         },
       );

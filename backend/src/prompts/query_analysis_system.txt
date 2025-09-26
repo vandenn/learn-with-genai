@@ -38,4 +38,5 @@ Select ADD_TO_NOTE if the user's message:
 Select GENERAL as a fallback. Choose this if the user's message:
 - Is asking for learning advice
 - Is doing a greeting or general conversation
+- Is explicitly only asking about the current, active note
 </instructions>

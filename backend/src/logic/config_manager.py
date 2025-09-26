@@ -10,12 +10,12 @@ from src.settings import settings
 CONFIG_FILE_NAME = ".learn_with_genai_config"
 
 
-def get_active_project() -> Optional[str]:
+def get_active_project_id() -> Optional[str]:
     config = load_base_folder_config()
     return config.active_project_id
 
 
-def set_active_project(project_id: Optional[str]) -> bool:
+def set_active_project_id(project_id: Optional[str]) -> bool:
     if project_id is not None:
         try:
             get_single_project(project_id)
@@ -29,12 +29,12 @@ def set_active_project(project_id: Optional[str]) -> bool:
     return True
 
 
-def get_active_file() -> Optional[str]:
+def get_active_file_name() -> Optional[str]:
     config = load_base_folder_config()
     return config.active_file_name
 
 
-def set_active_file(file_name: Optional[str]) -> None:
+def set_active_file_name(file_name: Optional[str]) -> None:
     config = load_base_folder_config()
     config.active_file_name = file_name
     config.modified = datetime.now()

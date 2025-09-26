@@ -9,7 +9,11 @@ def generate_note_content(state: TutorState) -> TutorState:
     llm = get_llm(is_mini=False)
 
     note_template = load_prompt("note_generation_user")
-    note_prompt = note_template.format(conversation_content=state["user_message"])
+    note_prompt = note_template.format(
+        user_message=state["user_message"],
+        conversation_history=state["conversation_history"],
+        highlighted_text=state["highlighted_text"] or "None",
+    )
 
     note_system = load_prompt("note_generation_system")
 
