@@ -7,7 +7,7 @@ def request_note_edit_consent(state: TutorState) -> TutorState:
     decision = interrupt(
         {
             "type": "note_consent",
-            "message": f"I've generated the following:\n{state['pending_note_edit']}\n===\nDo you want me to add this to your notes?",
+            "message": f"I've generated the following:\n{state['pending_note_edit']}\n===\nDo you want me to proceed with adding this to your notes?",
         }
     )
 

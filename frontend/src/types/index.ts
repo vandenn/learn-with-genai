@@ -25,7 +25,8 @@ export interface Config {
 
 export interface Message {
   id: string;
-  type: "user" | "assistant";
+  type: "user" | "assistant" | "consent";
   content: string;
   timestamp: Date;
+  thread_id?: string;
 }
