@@ -10,14 +10,13 @@ from src.prompts.helpers import load_prompt
 def analyze_user_query(state: TutorState) -> TutorState:
     llm = get_llm(is_mini=True)
 
+    query_analysis_system = load_prompt("query_analysis_system")
     query_analysis_template = load_prompt("query_analysis_user")
     query_analysis_prompt = query_analysis_template.format(
         user_message=state["user_message"],
         conversation_history=state["conversation_history"],
         highlighted_text=state["highlighted_text"] or "None",
     )
-
-    query_analysis_system = load_prompt("query_analysis_system")
 
     messages = [
         SystemMessage(content=query_analysis_system),
@@ -26,25 +25,34 @@ def analyze_user_query(state: TutorState) -> TutorState:
 
     response = llm.invoke(messages).content.strip()
 
+    state_update = {
+        "output_messages": [
+            {"type": "step", "content": "Let me think about that for a bit."}
+        ]
+    }
+
     try:
         analysis = json.loads(response)
         query_type = analysis.get("query_type", "GENERAL")
-        state["query_type"] = query_type
+        state_update["query_type"] = query_type
 
         if query_type == "SEARCH":
-            # Set search query from user message or extracted keywords
-            state["search_query"] = state["user_message"]
+            state_update["search_query"] = state["user_message"]
             if "keywords" in analysis:
-                state["search_query"] = ",".join(analysis["keywords"])
-            state["step_messages"].append("Searching your project files...")
+                state_update["search_query"] = ",".join(analysis["keywords"])
+            state_update["output_messages"] = [
+                {"type": "step", "content": "Searching your project files..."}
+            ]
         elif query_type == "ADD_TO_NOTE":
-            state["step_messages"].append("I'll add information to your note.")
-        else:
-            state["step_messages"].append("Let me think about that for a bit.")
+            state_update["output_messages"] = [
+                {"type": "step", "content": "I'll add information to your note."}
+            ]
 
     except (json.JSONDecodeError, KeyError):
-        # Fallback to general query type if analysis fails
-        state["query_type"] = "GENERAL"
-        state["step_messages"].append("Let me think about that for a bit.")
+        # Fallback
+        state_update["query_type"] = "GENERAL"
+        state_update["output_messages"] = [
+            {"type": "step", "content": "Let me think about that for a bit."}
+        ]
 
-    return state
+    return state_update

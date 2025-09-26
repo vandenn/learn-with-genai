@@ -37,8 +37,10 @@ class SetBaseFolderRequest(BaseModel):
 class AITutorChatRequest(BaseModel):
     message: str
     project_id: str
+    thread_id: Optional[str] = None
     conversation_history: List[Dict[str, Any]] = Field(default_factory=list)
     highlighted_text: Optional[str] = None
+    hitl_input: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
 class RenameFileRequest(BaseModel):
@@ -95,6 +97,7 @@ class AITutorStreamMessage(BaseModel):
     type: str  # "step", "final", "note"
     content: str
     timestamp: datetime = Field(default_factory=datetime.now)
+    thread_id: str
 
 
 # ================================

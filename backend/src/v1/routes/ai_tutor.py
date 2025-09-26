@@ -1,3 +1,5 @@
+import traceback
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter
@@ -22,25 +24,30 @@ async def chat(request: AITutorChatRequest):
         except Exception:
             active_file_content = None
 
+    thread_id = request.thread_id or str(uuid.uuid4())
+
     async def generate_stream():
         try:
             for result in stream_ai_tutor_workflow(
                 user_message=request.message,
                 project_id=request.project_id,
+                thread_id=thread_id,
                 conversation_history=request.conversation_history,
                 highlighted_text=request.highlighted_text,
                 active_file_content=active_file_content,
+                hitl_input=request.hitl_input,
             ):
                 stream_msg = AITutorStreamMessage(
-                    type=result["type"], content=result["content"]
+                    type=result["type"], content=result["content"], thread_id=thread_id
                 )
                 yield f"data: {stream_msg.model_dump_json()}\n\n"
-        except Exception as e:
+        except Exception:
             error_msg = AITutorStreamMessage(
                 type="final",
                 content="I'm having trouble processing your question right now. Please try again!",
+                thread_id=thread_id,
             )
-            print(f"Error: {e}")
+            print(traceback.format_exc())
             yield f"data: {error_msg.model_dump_json()}\n\n"
 
     return StreamingResponse(

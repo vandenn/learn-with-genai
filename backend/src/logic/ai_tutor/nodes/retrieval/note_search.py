@@ -5,10 +5,10 @@ TOP_K_FILES = 5
 
 
 def search_notes(state: TutorState) -> TutorState:
-    if state["query_type"] != "SEARCH":
-        return state
+    state_update = {}
 
-    state["step_messages"].append(f"Searching for: {state['search_query']}")
+    if state["query_type"] != "SEARCH":
+        return state_update
 
     try:
         project = get_single_project(state["project_id"])
@@ -23,7 +23,6 @@ def search_notes(state: TutorState) -> TutorState:
                 file_content = open_file(f"{project.path}/{file_name}.md")
                 content_lower = file_content.content.lower()
 
-                # Count matches for each search term
                 matches = sum(1 for term in search_terms if term in content_lower)
 
                 if matches > 0:
@@ -37,37 +36,45 @@ def search_notes(state: TutorState) -> TutorState:
                         }
                     )
             except Exception:
-                # Skip files that can't be read
                 continue
 
-        # Sort by relevance and take top K
         found_files.sort(key=lambda x: x["relevance"], reverse=True)
-        state["found_files"] = found_files[:TOP_K_FILES]
+        found_files = found_files[:TOP_K_FILES]
+        state_update["found_files"] = found_files
 
         if found_files:
             file_count = len(found_files)
-            state["step_messages"].append(
-                f"Found {file_count} relevant file(s). Analyzing the content..."
-            )
+            state_update["output_messages"] = [
+                {
+                    "type": "step",
+                    "content": f"Found {file_count} relevant file(s). Analyzing the content...",
+                }
+            ]
 
             # Prepare content for LLM processing
             contents = []
-            for file_info in state["found_files"]:
+            for file_info in found_files:
                 contents.append(
                     f"File: {file_info['file']}\nContent: {file_info['content']}\n---"
                 )
-            state["file_contents"] = "\n".join(contents)
+            state_update["file_contents"] = "\n".join(contents)
         else:
-            state["step_messages"].append("No relevant files found in your project.")
-            state["file_contents"] = ""
-
+            state_update["output_messages"] = [
+                {"type": "step", "content": "No relevant files found in your project."}
+            ]
+            state_update["file_contents"] = ""
     except ValueError:
-        state["step_messages"].append(f"Project not found: {state['project_id']}")
-        state["file_contents"] = ""
+        state_update["output_messages"] = [
+            {"type": "step", "content": f"Project not found: {state['project_id']}"}
+        ]
+        state_update["file_contents"] = ""
     except Exception:
-        state["step_messages"].append(
-            "Had trouble searching files, but I'll do my best to help."
-        )
-        state["file_contents"] = ""
+        state_update["output_messages"] = [
+            {
+                "type": "step",
+                "content": "Had trouble searching files, but I'll do my best to help.",
+            }
+        ]
+        state_update["file_contents"] = ""
 
-    return state
+    return state_update

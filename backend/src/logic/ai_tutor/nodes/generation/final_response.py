@@ -36,6 +36,4 @@ def generate_final_response(state: TutorState) -> TutorState:
     ]
 
     response = llm.invoke(messages).content
-    state["final_response"] = response
-
-    return state
+    return {"output_messages": [{"type": "final", "content": response}]}
