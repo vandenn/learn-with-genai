@@ -1,25 +1,25 @@
-from typing import Any, Dict, List, Optional, TypedDict
+from operator import add
+from typing import Annotated, Any, Dict, List, TypedDict
 
 
 class TutorState(TypedDict):
     # User input and context
     user_message: str
-    project_id: str | None
+    project_id: str
     conversation_history: List[Dict[str, Any]]
-    highlighted_text: Optional[str]
-    active_file_content: Optional[str]
+    highlighted_text: str
+    active_file_content: str
 
     # Query analysis
     query_type: str  # "SEARCH", "ADD_TO_NOTE", "GENERAL"
-    search_query: str
 
-    # Retrieval results
+    # Search and retrieval
+    search_query: str
     found_files: List[Dict[str, Any]]
     file_contents: str
 
-    # Generation outputs
-    final_response: str
-    note_content: str
+    # Note generation
+    pending_note_edit: str
 
-    # Progress tracking
-    step_messages: List[str]
+    # Ouput
+    output_messages: Annotated[List[Dict[str, str]], add]

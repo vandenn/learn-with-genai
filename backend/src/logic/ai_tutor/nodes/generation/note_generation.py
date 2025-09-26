@@ -20,7 +20,7 @@ def generate_note_content(state: TutorState) -> TutorState:
     messages = [SystemMessage(content=note_system), HumanMessage(content=note_prompt)]
 
     response = llm.invoke(messages).content
-    state["note_content"] = response
-    state["final_response"] = "✅ Content has been added to your note!"
-
-    return state
+    return {
+        "pending_note_edit": response,
+        "output_messages": [{"type": "step", "content": "Note content generated."}],
+    }
