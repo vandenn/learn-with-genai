@@ -45,7 +45,10 @@ def analyze_user_query(state: TutorState) -> TutorState:
             ]
         elif query_type == "ADD_TO_NOTE":
             state_update["output_messages"] = [
-                {"type": "step", "content": "I'll add information to your note."}
+                {
+                    "type": "step",
+                    "content": "Let me generate some information for your note...",
+                }
             ]
 
     except (json.JSONDecodeError, KeyError):
