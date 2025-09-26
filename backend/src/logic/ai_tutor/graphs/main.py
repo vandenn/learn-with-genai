@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Optional
+
 from langgraph.graph import END, StateGraph
 
 from src.logic.ai_tutor.edges.routing import route_after_analysis
@@ -36,12 +38,21 @@ def create_tutor_workflow() -> StateGraph:
     return workflow.compile()
 
 
-def stream_ai_tutor_workflow(user_message: str, current_project_id: str):
+def stream_ai_tutor_workflow(
+    user_message: str,
+    project_id: str,
+    conversation_history: List[Dict[str, Any]] = None,
+    highlighted_text: Optional[str] = None,
+    active_file_content: Optional[str] = None,
+):
     workflow = create_tutor_workflow()
 
     initial_state = TutorState(
         user_message=user_message,
-        current_project_id=current_project_id,
+        project_id=project_id,
+        conversation_history=conversation_history or [],
+        highlighted_text=highlighted_text,
+        active_file_content=active_file_content,
         query_type="",
         search_query="",
         found_files=[],

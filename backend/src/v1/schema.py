@@ -37,6 +37,8 @@ class SetBaseFolderRequest(BaseModel):
 class AITutorChatRequest(BaseModel):
     message: str
     project_id: str
+    conversation_history: List[Dict[str, Any]] = Field(default_factory=list)
+    highlighted_text: Optional[str] = None
 
 
 class RenameFileRequest(BaseModel):

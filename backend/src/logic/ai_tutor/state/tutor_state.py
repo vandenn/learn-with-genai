@@ -1,10 +1,13 @@
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
 
 class TutorState(TypedDict):
     # User input and context
     user_message: str
-    current_project_id: str | None
+    project_id: str | None
+    conversation_history: List[Dict[str, Any]]
+    highlighted_text: Optional[str]
+    active_file_content: Optional[str]
 
     # Query analysis
     query_type: str  # "SEARCH", "ADD_TO_NOTE", "GENERAL"

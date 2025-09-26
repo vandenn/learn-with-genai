@@ -11,7 +11,7 @@ def search_notes(state: TutorState) -> TutorState:
     state["step_messages"].append(f"Searching for: {state['search_query']}")
 
     try:
-        project = get_single_project(state["current_project_id"])
+        project = get_single_project(state["project_id"])
 
         found_files = []
         search_terms = state["search_query"].lower().split(",")
@@ -62,9 +62,7 @@ def search_notes(state: TutorState) -> TutorState:
             state["file_contents"] = ""
 
     except ValueError:
-        state["step_messages"].append(
-            f"Project not found: {state['current_project_id']}"
-        )
+        state["step_messages"].append(f"Project not found: {state['project_id']}")
         state["file_contents"] = ""
     except Exception:
         state["step_messages"].append(

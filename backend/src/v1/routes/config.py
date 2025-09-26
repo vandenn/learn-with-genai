@@ -26,7 +26,7 @@ async def get_config():
 @router.get("/active-project", response_model=ActiveProjectResponse)
 async def get_active_project():
     try:
-        active_project_id = config_manager.get_active_project()
+        active_project_id = config_manager.get_active_project_id()
         return ActiveProjectResponse(project_id=active_project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -35,7 +35,7 @@ async def get_active_project():
 @router.post("/active-project", response_model=SuccessResponse)
 async def set_active_project(request: SetActiveProjectRequest):
     try:
-        success = config_manager.set_active_project(request.project_id)
+        success = config_manager.set_active_project_id(request.project_id)
         if not success and request.project_id is not None:
             raise HTTPException(status_code=404, detail="Project not found")
         return SuccessResponse(success=True)
@@ -46,7 +46,7 @@ async def set_active_project(request: SetActiveProjectRequest):
 @router.get("/active-file", response_model=ActiveFileReponse)
 async def get_active_file():
     try:
-        active_file_name = config_manager.get_active_file()
+        active_file_name = config_manager.get_active_file_name()
         return ActiveFileReponse(file_name=active_file_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -55,7 +55,7 @@ async def get_active_file():
 @router.post("/active-file", response_model=SuccessResponse)
 async def set_active_file(request: SetActiveFileRequest):
     try:
-        config_manager.set_active_file(request.file_name)
+        config_manager.set_active_file_name(request.file_name)
         return SuccessResponse(success=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
