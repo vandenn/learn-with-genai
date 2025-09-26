@@ -3,6 +3,11 @@ Conversation so far:
 {conversation_history}
 </conversation_history>
 
+<context>
+Here is the currently open and active file the user is looking at:
+{active_file_content}
+</context>
+
 <user_input>
 User question: {user_message}
 Highlighted text: {highlighted_text}

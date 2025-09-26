@@ -15,6 +15,7 @@ def generate_final_response(state: TutorState) -> TutorState:
             user_message=state["user_message"],
             file_contents=state["file_contents"],
             conversation_history=state["conversation_history"],
+            active_file_content=state["active_file_content"],
             highlighted_text=state["highlighted_text"] or "None",
         )
     else:
@@ -23,6 +24,7 @@ def generate_final_response(state: TutorState) -> TutorState:
         context_prompt = general_template.format(
             user_message=state["user_message"],
             conversation_history=state["conversation_history"],
+            active_file_content=state["active_file_content"],
             highlighted_text=state["highlighted_text"] or "None",
         )
 

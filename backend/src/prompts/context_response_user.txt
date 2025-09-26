@@ -4,7 +4,9 @@ Conversation so far:
 </conversation_history>
 
 <context>
-Provide a helpful response that references the following files and content found from the user's project.
+Here is the currently open and active file the user is looking at:
+{active_file_content}
+If relevant, provide a helpful response that references the following files and content found from the user's project:
 {file_contents}
 </context>
 
