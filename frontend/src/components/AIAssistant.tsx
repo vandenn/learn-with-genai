@@ -35,11 +35,84 @@ export default function AIAssistant({
     textEditorRef.current.appendContent(content);
   };
 
+  const processStreamResponse = async (response: Response) => {
+    if (!response.ok || !response.body) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      while (buffer.includes("\n\n")) {
+        const messageEndIndex = buffer.indexOf("\n\n");
+        const messageChunk = buffer.slice(0, messageEndIndex);
+        buffer = buffer.slice(messageEndIndex + 2);
+
+        const lines = messageChunk.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === "note") {
+                appendToFile(data.content);
+              } else if (data.type === "consent") {
+                const consentMessage: Message = {
+                  id: `${Date.now()}-${Math.random()}`,
+                  type: "consent",
+                  content: data.content,
+                  timestamp: new Date(),
+                  thread_id: data.thread_id,
+                };
+
+                setMessages((prev) => [...prev, consentMessage]);
+                setPendingConsent({
+                  message: data.content,
+                  thread_id: data.thread_id,
+                });
+                setIsThinking(false);
+              } else {
+                const aiMessage: Message = {
+                  id: `${Date.now()}-${Math.random()}`,
+                  type: "assistant",
+                  content: data.content,
+                  timestamp: new Date(),
+                  thread_id: data.thread_id,
+                };
+
+                setMessages((prev) => [...prev, aiMessage]);
+
+                if (data.type === "final") {
+                  setIsThinking(false);
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              }
+            } catch (parseError) {
+              console.error("Error parsing stream data:", parseError);
+            }
+          }
+        }
+      }
+    }
+  };
+
   const handleConsentResponse = async (decision: "approve" | "reject") => {
     if (!pendingConsent || !activeProjectId) return;
 
     setIsProcessingConsent(true);
     setIsThinking(true);
+
+    // Clear pending consent state
+    setPendingConsent(null);
+    setIsProcessingConsent(false);
 
     try {
       const response = await fetch(
@@ -60,77 +133,7 @@ export default function AIAssistant({
         },
       );
 
-      if (response.ok && response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        // Clear pending consent state
-        setPendingConsent(null);
-        setIsProcessingConsent(false);
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          while (buffer.includes("\n\n")) {
-            const messageEndIndex = buffer.indexOf("\n\n");
-            const messageChunk = buffer.slice(0, messageEndIndex);
-            buffer = buffer.slice(messageEndIndex + 2);
-
-            const lines = messageChunk.split("\n");
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-
-                  if (data.type === "note") {
-                    appendToFile(data.content);
-                  } else if (data.type === "consent") {
-                    // Handle consent request - add to message list and set pending state
-                    const consentMessage: Message = {
-                      id: `${Date.now()}-${Math.random()}`,
-                      type: "consent",
-                      content: data.content,
-                      timestamp: new Date(),
-                      thread_id: data.thread_id,
-                    };
-
-                    setMessages((prev) => [...prev, consentMessage]);
-                    setPendingConsent({
-                      message: data.content,
-                      thread_id: data.thread_id,
-                    });
-                    setIsThinking(false);
-                  } else {
-                    const aiMessage: Message = {
-                      id: `${Date.now()}-${Math.random()}`,
-                      type: "assistant",
-                      content: data.content,
-                      timestamp: new Date(),
-                      thread_id: data.thread_id,
-                    };
-
-                    setMessages((prev) => [...prev, aiMessage]);
-
-                    if (data.type === "final") {
-                      setIsThinking(false);
-                    }
-
-                    await new Promise((resolve) => setTimeout(resolve, 100));
-                  }
-                } catch (parseError) {
-                  console.error("Error parsing stream data:", parseError);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      await processStreamResponse(response);
     } catch (error) {
       console.error("Error sending consent response:", error);
       const aiResponse: Message = {
@@ -197,80 +200,7 @@ export default function AIAssistant({
         },
       );
 
-      if (response.ok && response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          // Accumulate chunks in buffer
-          buffer += decoder.decode(value, { stream: true });
-
-          // Process complete messages
-          while (buffer.includes("\n\n")) {
-            const messageEndIndex = buffer.indexOf("\n\n");
-            const messageChunk = buffer.slice(0, messageEndIndex);
-            buffer = buffer.slice(messageEndIndex + 2);
-
-            // Process each line in the message chunk
-            const lines = messageChunk.split("\n");
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-
-                  if (data.type === "note") {
-                    // Handle note content by appending to active file
-                    appendToFile(data.content);
-                  } else if (data.type === "consent") {
-                    // Handle consent request - add to message list and set pending state
-                    const consentMessage: Message = {
-                      id: `${Date.now()}-${Math.random()}`,
-                      type: "consent",
-                      content: data.content,
-                      timestamp: new Date(),
-                      thread_id: data.thread_id,
-                    };
-
-                    setMessages((prev) => [...prev, consentMessage]);
-                    setPendingConsent({
-                      message: data.content,
-                      thread_id: data.thread_id,
-                    });
-                    setIsThinking(false);
-                  } else {
-                    // Handle regular messages (step, final)
-                    const aiMessage: Message = {
-                      id: `${Date.now()}-${Math.random()}`,
-                      type: "assistant",
-                      content: data.content,
-                      timestamp: new Date(),
-                      thread_id: data.thread_id,
-                    };
-
-                    setMessages((prev) => [...prev, aiMessage]);
-
-                    // If this is the final message, stop thinking
-                    if (data.type === "final") {
-                      setIsThinking(false);
-                    }
-
-                    // Add a small delay to show messages one by one
-                    await new Promise((resolve) => setTimeout(resolve, 100));
-                  }
-                } catch (parseError) {
-                  console.error("Error parsing stream data:", parseError);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      await processStreamResponse(response);
     } catch (error) {
       console.error("Error sending message to AI tutor:", error);
       const aiResponse: Message = {
