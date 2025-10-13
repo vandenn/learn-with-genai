@@ -1,7 +1,7 @@
-import sqlite3
 from typing import Any, Dict, List
 
-from langgraph.checkpoint.sqlite import SqliteSaver
+import aiosqlite
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, StateGraph
 from langgraph.types import Command
 
@@ -45,7 +45,7 @@ def create_tutor_graph_builder() -> StateGraph:
     return graph
 
 
-def stream_ai_tutor_workflow(
+async def stream_ai_tutor_workflow(
     user_message: str,
     project_id: str,
     thread_id: str,
@@ -56,11 +56,8 @@ def stream_ai_tutor_workflow(
 ):
     graph_builder = create_tutor_graph_builder()
 
-    checkpointer = SqliteSaver(
-        sqlite3.connect(
-            settings.data_path / "ai_tutor_state.db", check_same_thread=False
-        )
-    )
+    conn = await aiosqlite.connect(settings.data_path / "ai_tutor_state.db")
+    checkpointer = AsyncSqliteSaver(conn)
     graph = graph_builder.compile(checkpointer=checkpointer)
 
     if (
@@ -84,7 +81,7 @@ def stream_ai_tutor_workflow(
 
     config = {"configurable": {"thread_id": thread_id}}
 
-    for step_result in graph.stream(graph_input, config):
+    async for step_result in graph.astream(graph_input, config):
         if "__interrupt__" in step_result:
             interrupt_type = step_result["__interrupt__"][0].value["type"]
             if interrupt_type == "note_consent":

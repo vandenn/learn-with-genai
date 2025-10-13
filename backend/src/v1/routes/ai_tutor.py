@@ -28,7 +28,7 @@ async def chat(request: AITutorChatRequest):
 
     async def generate_stream():
         try:
-            for result in stream_ai_tutor_workflow(
+            async for result in stream_ai_tutor_workflow(
                 user_message=request.message,
                 project_id=request.project_id,
                 thread_id=thread_id,
