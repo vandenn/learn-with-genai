@@ -10,10 +10,3 @@ def route_after_analysis(state: TutorState) -> str:
         return "search_notes"
     else:
         return "generate_final_response"
-
-
-def should_continue_to_explanation(state: TutorState) -> str:
-    # TODO: Currently always continue to explanation, but could add logic here
-    # to check if search results are sufficient, etc.
-    _ = state  # Acknowledge unused parameter
-    return "generate_explanation"

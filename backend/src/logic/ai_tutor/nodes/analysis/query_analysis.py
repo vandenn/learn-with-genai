@@ -7,7 +7,7 @@ from src.logic.ai_tutor.utils import get_llm
 from src.prompts.helpers import load_prompt
 
 
-def analyze_user_query(state: TutorState) -> TutorState:
+async def analyze_user_query(state: TutorState) -> TutorState:
     llm = get_llm(is_mini=True)
 
     query_analysis_system = load_prompt("query_analysis_system")
@@ -23,7 +23,7 @@ def analyze_user_query(state: TutorState) -> TutorState:
         HumanMessage(content=query_analysis_prompt),
     ]
 
-    response = llm.invoke(messages).content.strip()
+    response = (await llm.ainvoke(messages)).content.strip()
 
     state_update = {
         "output_messages": [

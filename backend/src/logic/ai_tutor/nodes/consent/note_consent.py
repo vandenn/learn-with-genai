@@ -3,7 +3,7 @@ from langgraph.types import interrupt
 from src.logic.ai_tutor.state.tutor_state import TutorState
 
 
-def request_note_edit_consent(state: TutorState) -> TutorState:
+async def request_note_edit_consent(state: TutorState) -> TutorState:
     decision = interrupt(
         {
             "type": "note_consent",

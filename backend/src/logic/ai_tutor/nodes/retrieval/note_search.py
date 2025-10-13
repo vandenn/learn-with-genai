@@ -4,7 +4,7 @@ from src.logic.projects_manager import get_single_project, open_file
 TOP_K_FILES = 5
 
 
-def search_notes(state: TutorState) -> TutorState:
+async def search_notes(state: TutorState) -> TutorState:
     state_update = {}
 
     if state["query_type"] != "SEARCH":

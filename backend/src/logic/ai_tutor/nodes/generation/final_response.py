@@ -5,7 +5,7 @@ from src.logic.ai_tutor.utils import get_llm
 from src.prompts.helpers import load_prompt
 
 
-def generate_final_response(state: TutorState) -> TutorState:
+async def generate_final_response(state: TutorState) -> TutorState:
     llm = get_llm(is_mini=False)
 
     if state["file_contents"]:
@@ -35,5 +35,5 @@ def generate_final_response(state: TutorState) -> TutorState:
         HumanMessage(content=context_prompt),
     ]
 
-    response = llm.invoke(messages).content
+    response = (await llm.ainvoke(messages)).content
     return {"output_messages": [{"type": "final", "content": response}]}

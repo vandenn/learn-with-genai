@@ -5,7 +5,7 @@ from src.logic.ai_tutor.utils import get_llm
 from src.prompts.helpers import load_prompt
 
 
-def generate_note_content(state: TutorState) -> TutorState:
+async def generate_note_content(state: TutorState) -> TutorState:
     llm = get_llm(is_mini=False)
 
     note_template = load_prompt("note_generation_user")
@@ -19,7 +19,7 @@ def generate_note_content(state: TutorState) -> TutorState:
 
     messages = [SystemMessage(content=note_system), HumanMessage(content=note_prompt)]
 
-    response = llm.invoke(messages).content
+    response = (await llm.ainvoke(messages)).content
     return {
         "pending_note_edit": response,
         "output_messages": [{"type": "step", "content": "Note content generated."}],
